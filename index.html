@@ -1,0 +1,3075 @@
+<!doctype html>
+<html lang="pt-BR">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Implantações - Sistema AGV</title>
+  <script src="https://cdn.tailwindcss.com"></script><!-- SheetJS para leitura de Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><!-- Sistema Local Inicializado -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getFirestore, collection, onSnapshot, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
+      authDomain: "controle-agv.firebaseapp.com",
+      projectId: "controle-agv",
+      storageBucket: "controle-agv.firebasestorage.app",
+      messagingSenderId: "220840335975",
+      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
+    };
+
+const app = initializeApp(firebaseConfig);
+window.db = getFirestore(app);
+
+console.log("🔥 Firestore conectado com sucesso");
+</script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .hero-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #581c87 100%);
+            min-height: 100vh;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-badge {
+            animation: statusPulse 2s infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+        }
+
+        .modal {
+            backdrop-filter: blur(10px);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="hero-bg"><!-- Header -->
+  <header class="bg-black/20 backdrop-blur-md border-b border-white/20">
+   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex justify-between items-center">
+     <div class="flex items-center space-x-4"><button onclick="voltarMenu()" class="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors">
+       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+       </svg></button>
+      <div class="bg-indigo-500/20 p-3 rounded-xl">
+       <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+       </svg>
+      </div>
+      <div>
+       <h1 class="text-3xl font-bold text-white">Controle de Implantações</h1>
+       <p class="text-white/80">Gestão e Acompanhamento de Projetos AGV</p>
+      </div>
+     </div>
+     <div class="flex items-center space-x-4"><button onclick="importarDados()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg text-white font-medium transition-colors flex items-center space-x-2" id="btnImportar">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+       </svg><span>Importar Excel</span> </button> <button onclick="novaImplantacao()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-white font-medium transition-colors flex items-center space-x-2" id="btnNova">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+       </svg><span>Nova Implantação</span> </button>
+     </div>
+    </div>
+   </div>
+  </header><!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"><!-- Estatísticas -->
+   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"><!-- Total de Implantações -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
+     <div class="flex items-center justify-between">
+      <div>
+       <p class="text-white/80 text-sm font-medium">Total de Implantações</p>
+       <p class="text-3xl font-bold text-white mt-2" id="totalImplantacoes">0</p>
+      </div>
+      <div class="bg-blue-500/20 p-3 rounded-xl">
+       <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+       </svg>
+      </div>
+     </div>
+     <div class="mt-4 flex items-center text-green-400 text-sm">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+      </svg><span>Sistema Cloud Ativo 💾</span>
+     </div>
+    </div><!-- Em Produção -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
+     <div class="flex items-center justify-between">
+      <div>
+       <p class="text-white/80 text-sm font-medium">Em Produção</p>
+       <p class="text-3xl font-bold text-white mt-2" id="emProducao">0</p>
+      </div>
+      <div class="bg-green-500/20 p-3 rounded-xl">
+       <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+       </svg>
+      </div>
+     </div>
+     <div class="mt-4 flex items-center text-green-400 text-sm">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+      </svg><span id="percentProducao">0% do total</span>
+     </div>
+    </div><!-- Em Desenvolvimento -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
+     <div class="flex items-center justify-between">
+      <div>
+       <p class="text-white/80 text-sm font-medium">Em Desenvolvimento</p>
+       <p class="text-3xl font-bold text-white mt-2" id="emDesenvolvimento">0</p>
+      </div>
+      <div class="bg-yellow-500/20 p-3 rounded-xl">
+       <svg class="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+       </svg>
+      </div>
+     </div>
+     <div class="mt-4 flex items-center text-yellow-400 text-sm">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg><span id="percentDesenvolvimento">0% do total</span>
+     </div>
+    </div><!-- Cancelados -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
+     <div class="flex items-center justify-between">
+      <div>
+       <p class="text-white/80 text-sm font-medium">Cancelados</p>
+       <p class="text-3xl font-bold text-white mt-2" id="cancelados">0</p>
+      </div>
+      <div class="bg-red-500/20 p-3 rounded-xl">
+       <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+       </svg>
+      </div>
+     </div>
+     <div class="mt-4 flex items-center text-red-400 text-sm">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+      </svg><span id="percentCancelados">0% do total</span>
+     </div>
+    </div><!-- Tempo Médio -->
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
+     <div class="flex items-center justify-between">
+      <div>
+       <p class="text-white/80 text-sm font-medium">Tempo Médio</p>
+       <p class="text-3xl font-bold text-white mt-2" id="tempoMedio">0</p>
+       <p class="text-white/60 text-xs mt-1">dias</p>
+      </div>
+      <div class="bg-purple-500/20 p-3 rounded-xl">
+       <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+       </svg>
+      </div>
+     </div>
+     <div class="mt-4 flex items-center text-purple-400 text-sm">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+      </svg><span>Dados Cloud 💾</span>
+     </div>
+    </div>
+   </div><!-- Filtros e Busca -->
+   <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 mb-8 fade-in">
+    <div class="flex flex-wrap gap-4 items-center justify-between">
+     <div class="flex flex-wrap gap-4 items-center">
+      <h3 class="text-lg font-semibold text-white">Filtros:</h3><select id="filtroStatus" class="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"> <option value="" class="bg-gray-800 text-white">Todos os Status</option> <option value="concluido" class="bg-gray-800 text-white">Concluído</option> <option value="andamento" class="bg-gray-800 text-white">Em Andamento</option> <option value="homologacao" class="bg-gray-800 text-white">Homologação</option> <option value="cancelado" class="bg-gray-800 text-white">Cancelado</option> </select> <select id="filtroFornecedor" class="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"> <option value="" class="bg-gray-800 text-white">Todos os Fornecedores</option> <option value="2cx" class="bg-gray-800 text-white">2CX</option> <option value="aspect" class="bg-gray-800 text-white">Aspect</option> <option value="paneas" class="bg-gray-800 text-white">Paneas</option> <option value="pontal" class="bg-gray-800 text-white">Pontal</option> <option value="robbu" class="bg-gray-800 text-white">Robbu</option> <option value="sinergytech" class="bg-gray-800 text-white">Sinergytech</option> <option value="techia" class="bg-gray-800 text-white">TechIA</option> </select> <select id="ordenarPor" class="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"> <option value="" class="bg-gray-800 text-white">Ordenar por</option> <option value="fornecedor-az" class="bg-gray-800 text-white">Fornecedor A-Z</option> <option value="data-antiga" class="bg-gray-800 text-white">Data mais antiga</option> <option value="data-recente" class="bg-gray-800 text-white">Data mais recente</option> <option value="status" class="bg-gray-800 text-white">Status</option> </select>
+     </div>
+     <div class="flex items-center space-x-4">
+      <div class="relative"><input type="text" id="busca" placeholder="Buscar implantações..." class="bg-white/10 border border-white/20 rounded-lg px-4 py-2 pl-10 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+       <svg class="w-5 h-5 text-white/60 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+       </svg>
+      </div><button onclick="aplicarFiltros()" class="bg-indigo-600 hover:bg-indigo-700 px-6 py-2 rounded-lg text-white font-medium transition-colors"> Aplicar </button>
+     </div>
+    </div>
+   </div><!-- Lista de Implantações -->
+   <div class="space-y-6 fade-in" id="listaImplantacoes">
+    <div class="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-12 text-center">
+     <div class="bg-blue-500/20 p-4 rounded-xl inline-block mb-4">
+      <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+      </svg>
+     </div>
+     <h3 class="text-xl font-bold text-white mb-2">Carregando dados...</h3>
+     <p class="text-white/80">Inicializando sistema de armazenamento cloud 💾</p>
+    </div>
+   </div><!-- Paginação -->
+   <div class="flex justify-center items-center space-x-4 mt-12">
+   </div>
+  </main><!-- Modal de Login -->
+  <div id="modalLogin" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+   <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-t-xl">
+     <div class="text-center">
+      <div class="bg-white/20 p-3 rounded-xl inline-block mb-4">
+       <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+       </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-white">🔐 Acesso Restrito</h2>
+      <p class="text-white/80 mt-2">Sistema de Controle de Implantações AGV</p>
+     </div>
+    </div>
+    <div class="p-6">
+     <form id="formLogin" class="space-y-4">
+      <div><label class="block text-sm font-semibold text-gray-700 mb-2">CPF</label> <input type="text" id="cpfInput" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="000.000.000-00" maxlength="14">
+      </div><button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg text-white font-medium transition-colors"> Acessar Sistema </button>
+     </form>
+     <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+      <h3 class="font-semibold text-gray-800 mb-2">ℹ️ Informações de Acesso:</h3>
+      <div class="text-sm text-gray-600 space-y-1">
+       <p><strong>👑 Administradores:</strong> Acesso total (criar, editar, excluir)</p>
+       <p><strong>👁️ Outros usuários:</strong> Apenas visualização</p>
+       <p><strong>🔥 Firebase:</strong> Dados sincronizados em tempo real</p>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div><!-- Footer -->
+  <footer class="bg-black/20 backdrop-blur-md border-t border-white/20 mt-16">
+   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="text-center">
+     <p class="text-white">© 2025 Equipe Agentes Virtuais. Sistema de Gestão AGV.</p>
+     <p class="mt-2 text-white/60 text-sm">Desenvolvido por Évelim Esquetini</p>
+    </div>
+   </div>
+  </footer>
+  <script>
+        // Sistema de controle de acesso
+        let usuarioAtual = null;
+        let permissoes = {
+            podeVer: false,
+            podeEditar: false,
+            podeExcluir: false,
+            podeIncluir: false
+        };
+
+        // CPFs com acesso total (administradores)
+        const cpfsAdministradores = [
+            '06660278974',
+            '08788382958', 
+            '23100855884',
+            '08843197924',
+            '39540020867'
+        ];
+
+        // Sistema Local
+        let implantacoes = [];
+        let sistemaInicializado = false;
+
+        function voltarMenu() {
+            window.location.href = '../index.html';
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Verificar se já está logado
+           const cpfSalvo = null; // Não usamos localStorage
+            mostrarModalLogin();
+            if (cpfSalvo) {
+                // Verificar se é administrador
+                if (cpfsAdministradores.includes(cpfSalvo)) {
+                    usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
+                } else if (cpfSalvo.length === 11 && /^\d+$/.test(cpfSalvo)) {
+                    usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
+                }
+                
+                if (usuarioAtual) {
+                    await fazerLogin(cpfSalvo);
+                } else {
+                    mostrarModalLogin();
+                }
+            } else {
+                mostrarModalLogin();
+            }
+
+            // Inicializar sistema local
+            if (!sistemaInicializado) {
+                console.log('💾 Inicializando sistema...');
+                inicializarSistemaCloud();
+            }
+
+            // Configurar máscara de CPF
+            const cpfInput = document.getElementById('cpfInput');
+            if (cpfInput) {
+                cpfInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                    e.target.value = value;
+                });
+            }
+
+            // Configurar form de login
+            const formLogin = document.getElementById('formLogin');
+            if (formLogin) {
+                formLogin.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const cpf = cpfInput.value.replace(/\D/g, '');
+                    tentarLogin(cpf);
+                });
+            }
+        });
+
+async function inicializarSistemaCloud() {
+  try {
+    console.log("🔥 Conectando ao Firestore...");
+    const colRef = collection(window.db, "implantacoes");
+
+onSnapshot(colRef, (snapshot) => {
+  implantacoes = [];
+  snapshot.forEach((doc) => implantacoes.push(doc.data()));
+  console.log(`📡 ${implantacoes.length} registros recebidos`);
+  if (typeof renderizarImplantacoes === 'function') renderizarImplantacoes();
+  if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
+});
+  } catch (error) {
+    console.error("❌ Erro ao conectar com Firestore:", error);
+  }
+}
+
+	async function salvarDadosLocais() {
+	  try {
+	    for (const impl of implantacoes) {
+	      const ref = doc(window.db, "implantacoes", impl.id);
+	      await setDoc(ref, impl, { merge: true });
+	    }
+    console.log('💾 Dados salvos no Firestore com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao salvar no Firestore:', error);
+  }
+}
+
+        function mostrarModalLogin() {
+            const modal = document.getElementById('modalLogin');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function ocultarModalLogin() {
+            const modal = document.getElementById('modalLogin');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        async function tentarLogin(cpf) {
+            // Verificar se é administrador
+            if (cpfsAdministradores.includes(cpf)) {
+                usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpf };
+                await fazerLogin(cpf);
+                ocultarModalLogin();
+                console.log('Login realizado como Administrador');
+            } else if (cpf.length === 11 && /^\d+$/.test(cpf)) {
+                // Qualquer CPF válido (11 dígitos) tem acesso de visualização
+                usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpf };
+                await fazerLogin(cpf);
+                ocultarModalLogin();
+                console.log('Login realizado como Usuário');
+            } else {
+                mostrarNotificacao('CPF inválido. Digite um CPF com 11 dígitos', 'error');
+                document.getElementById('cpfInput').value = '';
+            }
+        }
+
+        async function fazerLogin(cpf) {
+            // Definir permissões baseadas no nível
+            if (usuarioAtual.nivel === 'admin') {
+                permissoes = {
+                    podeVer: true,
+                    podeEditar: true,
+                    podeExcluir: true,
+                    podeIncluir: true
+                };
+            } else {
+                permissoes = {
+                    podeVer: true,
+                    podeEditar: false,
+                    podeExcluir: false,
+                    podeIncluir: false
+                };
+            }
+
+            // Atualizar interface baseada nas permissões
+            atualizarInterfacePorPermissoes();
+            
+            // Adicionar efeito de fade-in aos elementos
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.1}s`;
+            });
+        }
+
+        function atualizarInterfacePorPermissoes() {
+            // Botões do header
+            const btnImportar = document.getElementById('btnImportar');
+            const btnNova = document.getElementById('btnNova');
+            
+            if (!permissoes.podeIncluir) {
+                if (btnImportar) btnImportar.style.display = 'none';
+                if (btnNova) btnNova.style.display = 'none';
+            }
+
+            // Adicionar indicador de usuário no header
+            const header = document.querySelector('header .flex.justify-between');
+            if (header && usuarioAtual && !document.querySelector('.user-info')) {
+                const userInfo = document.createElement('div');
+                userInfo.className = 'user-info flex items-center space-x-3 text-white/80 text-sm';
+                userInfo.innerHTML = `
+                    <div class="text-right">
+                        <p class="font-medium">${usuarioAtual.nome}</p>
+                        <p class="text-xs">${usuarioAtual.nivel === 'admin' ? '👑 Administrador' : '👁️ Visualizador'}</p>
+                    </div>
+                    <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500/30 p-2 rounded-lg transition-colors" title="Sair">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </button>
+                `;
+                
+                const buttonsContainer = header.querySelector('.flex.items-center.space-x-4');
+                if (buttonsContainer) {
+                    header.insertBefore(userInfo, buttonsContainer);
+                }
+            }
+        }
+
+        function logout() {
+            usuarioAtual = null;
+            permissoes = { podeVer: false, podeEditar: false, podeExcluir: false, podeIncluir: false };
+            location.reload();
+        }
+
+        function renderizarImplantacoes() {
+            const container = document.getElementById('listaImplantacoes');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (implantacoes.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-12 text-center">
+                        <div class="bg-blue-500/20 p-4 rounded-xl inline-block mb-4">
+                            <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Nenhuma implantação encontrada</h3>
+                        <p class="text-white/80 mb-6">Comece importando sua planilha Excel ou criando uma nova implantação</p>
+                        ${permissoes.podeIncluir ? `
+                            <button onclick="importarDados()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg text-white font-medium transition-colors mr-4">
+                                📊 Importar Excel
+                            </button>
+                            <button onclick="novaImplantacao()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-white font-medium transition-colors">
+                                ➕ Nova Implantação
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            implantacoes.forEach((impl, index) => {
+                const card = criarCardImplantacao(impl, index);
+                container.appendChild(card);
+            });
+        }
+
+        function criarCardImplantacao(impl, index) {
+            const div = document.createElement('div');
+            div.className = 'bg-white/10 backdrop-blur-md rounded-xl border border-white/20 card-hover';
+            div.dataset.status = impl.status || 'andamento';
+            div.dataset.fornecedor = impl.fornecedor || '';
+            div.dataset.data = impl.dataSolicitacao || impl.data_solicitacao || '';
+            div.dataset.index = index;
+
+            const statusConfig = {
+                'concluido': { cor: 'green', icone: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', texto: 'Em Produção' },
+                'andamento': { cor: 'yellow', icone: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', texto: 'Em Desenvolvimento' },
+                'homologacao': { cor: 'blue', icone: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', texto: 'Homologação' },
+                'cancelado': { cor: 'red', icone: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', texto: 'Cancelado' }
+            };
+
+            const status = statusConfig[impl.status] || statusConfig['andamento'];
+
+            // Compatibilidade com dados existentes - suporta tanto nomes novos quanto antigos
+            const campanha = impl.campanha || impl.nome_campanha || 'Campanha não informada';
+            const chamado = impl.chamado || impl.numero_chamado || 'Não informado';
+            const fornecedor = impl.fornecedor || impl.nome_fornecedor || 'Não informado';
+            const tipoAgv = impl.tipoAgv || impl.tipo_agv || impl.tipo || 'Não informado';
+            const carteira = impl.carteira || impl.nome_carteira || 'Não informada';
+            const dataSolicitacao = impl.dataSolicitacao || impl.data_solicitacao || impl.data_inicio;
+            const dataEntrega = impl.dataEntrega || impl.data_entrega || impl.data_fim;
+            const licencas = impl.licencas || impl.numero_licencas || impl.qtd_licencas;
+            const diasProducao = impl.diasProducao || impl.dias_producao || impl.duracao_dias;
+            const observacoes = impl.observacoes || impl.obs || impl.comentarios || 'Nenhuma observação registrada';
+
+            div.innerHTML = `
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-${status.cor}-500/20 p-3 rounded-xl">
+                                <svg class="w-8 h-8 text-${status.cor}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${status.icone}"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">${campanha}</h3>
+                                <p class="text-white/80">Chamado: ${chamado} | Fornecedor: ${fornecedor}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="bg-${status.cor}-500/20 text-${status.cor}-400 px-3 py-1 rounded-full text-sm font-medium status-badge">
+                                ● ${status.texto}
+                            </span>
+                            <div class="text-white/60 text-sm text-right">
+                                <p>Início: ${formatarData(dataSolicitacao)}</p>
+                                ${dataEntrega ? `<p>Entrega: ${formatarData(dataEntrega)}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <h4 class="text-white font-semibold mb-3">Detalhes do Projeto:</h4>
+                            <div class="text-white/80 space-y-2 text-sm">
+                                <p><strong>Tipo:</strong> ${tipoAgv}</p>
+                                <p><strong>Fornecedor:</strong> ${fornecedor}</p>
+                                <p><strong>Carteira:</strong> ${carteira}</p>
+                                ${licencas ? `<p><strong>Licenças:</strong> ${licencas}</p>` : ''}
+                                ${diasProducao ? `<p><strong>Duração:</strong> ${diasProducao} dias</p>` : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-semibold mb-3">Métricas:</h4>
+                            <div class="text-white/80 space-y-2 text-sm">
+                                ${impl.base ? `<p><strong>Base:</strong> ${impl.base.toLocaleString()}</p>` : ''}
+                                ${impl.spin ? `<p><strong>Spin:</strong> ${impl.spin.toLocaleString()}</p>` : ''}
+                                ${impl.hitRate || impl.hit_rate ? `<p><strong>Hit Rate:</strong> ${impl.hitRate || impl.hit_rate}%</p>` : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-semibold mb-3">Observações:</h4>
+                            <div class="text-white/80 space-y-2 text-sm">
+                                <p>${observacoes}</p>
+                                ${impl.dataCancelamento || impl.data_cancelamento ? `<p class="text-red-400"><strong>Cancelado em:</strong> ${formatarData(impl.dataCancelamento || impl.data_cancelamento)}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-4 border-t border-white/20">
+                        <div class="text-white/60 text-sm">
+                            <span>💾 Salvo: ${formatarData(impl.atualizadoEm || impl.atualizado_em || impl.criadoEm || impl.criado_em || new Date().toISOString())}</span>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="verDetalhes(${index})" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
+                                Ver Detalhes
+                            </button>
+                            ${permissoes.podeEditar ? `
+                                <button onclick="editarImplantacao(${index})" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
+                                    Editar
+                                </button>
+                            ` : ''}
+                            ${permissoes.podeExcluir ? `
+                                <button onclick="confirmarExclusao(${index})" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
+                                    Excluir
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return div;
+        }
+
+        function formatarData(dataString) {
+            if (!dataString) return 'Não informado';
+            
+            try {
+                let data;
+                
+                // Se já é uma data
+                if (dataString instanceof Date) {
+                    data = dataString;
+                } else if (typeof dataString === 'string') {
+                    // Se é string no formato ISO ou similar
+                    data = new Date(dataString);
+                } else {
+                    return 'Não informado';
+                }
+                
+                // Verificar se a data é válida
+                if (isNaN(data.getTime())) {
+                    return 'Data inválida';
+                }
+                
+                // Formatar para DD/MM/AAAA
+                return data.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            } catch (error) {
+                console.error('Erro ao formatar data:', error, dataString);
+                return 'Data inválida';
+            }
+        }
+
+        function atualizarEstatisticas() {
+            let total = implantacoes.length;
+            let producao = 0;
+            let desenvolvimento = 0;
+            let cancelados = 0;
+            let tempoTotal = 0;
+            let projetosFinalizados = 0;
+
+            implantacoes.forEach(impl => {
+                switch(impl.status) {
+                    case 'concluido':
+                        producao++;
+                        if (impl.diasProducao) {
+                            tempoTotal += impl.diasProducao;
+                            projetosFinalizados++;
+                        }
+                        break;
+                    case 'andamento':
+                    case 'homologacao':
+                        desenvolvimento++;
+                        break;
+                    case 'cancelado':
+                        cancelados++;
+                        if (impl.diasProducao) {
+                            tempoTotal += impl.diasProducao;
+                            projetosFinalizados++;
+                        }
+                        break;
+                }
+            });
+
+            const tempoMedio = projetosFinalizados > 0 ? Math.round(tempoTotal / projetosFinalizados) : 0;
+
+            // Calcular percentuais
+            const percentProducao = total > 0 ? ((producao / total) * 100).toFixed(1) : 0;
+            const percentDesenvolvimento = total > 0 ? ((desenvolvimento / total) * 100).toFixed(1) : 0;
+            const percentCancelados = total > 0 ? ((cancelados / total) * 100).toFixed(1) : 0;
+
+            // Atualizar elementos na tela
+            document.getElementById('totalImplantacoes').textContent = total;
+            document.getElementById('emProducao').textContent = producao;
+            document.getElementById('emDesenvolvimento').textContent = desenvolvimento;
+            document.getElementById('cancelados').textContent = cancelados;
+            document.getElementById('tempoMedio').textContent = tempoMedio;
+
+            // Atualizar percentuais
+            document.getElementById('percentProducao').textContent = `${percentProducao}% do total`;
+            document.getElementById('percentDesenvolvimento').textContent = `${percentDesenvolvimento}% do total`;
+            document.getElementById('percentCancelados').textContent = `${percentCancelados}% do total`;
+        }
+
+        function aplicarFiltros() {
+            const filtroStatus = document.getElementById('filtroStatus').value;
+            const filtroFornecedor = document.getElementById('filtroFornecedor').value;
+            const ordenarPor = document.getElementById('ordenarPor').value;
+            const busca = document.getElementById('busca').value.toLowerCase();
+            
+            const implantacoes = document.querySelectorAll('[data-status]');
+            let implantacoesArray = Array.from(implantacoes);
+            
+            // Aplicar filtros
+            implantacoesArray.forEach(impl => {
+                let mostrar = true;
+                
+                // Filtro por status
+                if (filtroStatus && impl.dataset.status !== filtroStatus) {
+                    mostrar = false;
+                }
+                
+                // Filtro por fornecedor
+                if (filtroFornecedor && impl.dataset.fornecedor !== filtroFornecedor) {
+                    mostrar = false;
+                }
+                
+                // Filtro por busca
+                if (busca && !impl.textContent.toLowerCase().includes(busca)) {
+                    mostrar = false;
+                }
+                
+                impl.style.display = mostrar ? 'block' : 'none';
+            });
+            
+            // Aplicar ordenação
+            if (ordenarPor) {
+                const container = document.getElementById('listaImplantacoes');
+                const implantacoesVisiveis = implantacoesArray.filter(impl => impl.style.display !== 'none');
+                
+                implantacoesVisiveis.sort((a, b) => {
+                    switch(ordenarPor) {
+                        case 'fornecedor-az':
+                            return a.dataset.fornecedor.localeCompare(b.dataset.fornecedor);
+                        case 'data-antiga':
+                            return new Date(a.dataset.data || '2024-01-01') - new Date(b.dataset.data || '2024-01-01');
+                        case 'data-recente':
+                            return new Date(b.dataset.data || '2024-01-01') - new Date(a.dataset.data || '2024-01-01');
+                        case 'status':
+                            return a.dataset.status.localeCompare(b.dataset.status);
+                        default:
+                            return 0;
+                    }
+                });
+                
+                implantacoesVisiveis.forEach(impl => container.appendChild(impl));
+            }
+            
+            mostrarNotificacao('🔍 Filtros aplicados com sucesso!', 'success');
+        }
+
+        function calcularDiasProducao() {
+            const form = document.getElementById('formNovaImplantacao');
+            if (!form) return;
+            
+            const dataSolicitacao = form.dataSolicitacao.value;
+            const dataEntrega = form.dataEntrega.value;
+            
+            if (dataSolicitacao && dataEntrega) {
+                const inicio = new Date(dataSolicitacao);
+                const fim = new Date(dataEntrega);
+                const diffTime = Math.abs(fim - inicio);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                form.diasProducao.value = diffDays;
+            }
+        }
+
+        function importarDados() {
+            if (!permissoes.podeIncluir) {
+                mostrarNotificacao('❌ Você não tem permissão para importar dados', 'error');
+                return;
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'modalImportacao';
+            modal.className = 'modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-xl">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">📊 Importar Planilha Excel</h2>
+                                <p class="text-blue-100 mt-1">Importação em massa para sistema local</p>
+                            </div>
+                            <button onclick="fecharModalImportacao()" class="text-white hover:text-gray-200 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Instruções -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <h3 class="text-lg font-semibold text-blue-800 mb-3">📋 Formato da Planilha Excel</h3>
+                            <p class="text-blue-700 mb-3">Sua planilha Excel deve conter as seguintes colunas (nomes exatos). <strong>Campos em branco serão importados com valores padrão:</strong></p>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-blue-600 font-mono bg-white p-3 rounded border">
+                                <span>• Status</span>
+                                <span>• Chamado</span>
+                                <span>• Data Solicitação</span>
+                                <span>• Fornecedor</span>
+                                <span>• Carteira</span>
+                                <span>• Campanha</span>
+                                <span>• Tipo AGV</span>
+                                <span>• Licenças</span>
+                                <span>• Data Entrega</span>
+                                <span>• Dias Produção</span>
+                                <span>• Data Cancelamento</span>
+                            </div>
+                            <p class="text-green-600 text-xs mt-2">✅ Campos em branco são permitidos - valores padrão serão aplicados automaticamente</p>
+                        </div>
+                        
+                        <!-- Upload de arquivo -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">📁 Selecionar Arquivo Excel (.xlsx, .xls, .xlsm, .xlsb)</label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                                <input type="file" id="arquivoExcel" accept=".xlsx,.xls,.xlsm,.xlsb,.csv" class="hidden">
+                                <button onclick="document.getElementById('arquivoExcel').click()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg text-white font-medium transition-colors">
+                                    📂 Escolher Arquivo Excel
+                                </button>
+                                <p class="text-gray-500 text-sm mt-2">Ou arraste e solte o arquivo aqui</p>
+                                <div id="nomeArquivo" class="mt-2 text-sm text-green-600 font-medium hidden"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview dos dados -->
+                        <div id="previewDados" class="mb-6 hidden">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">👀 Preview dos Dados (primeiros 5 registros):</h4>
+                            <div class="bg-gray-50 border rounded-lg p-4 max-h-60 overflow-auto">
+                                <div id="dadosPreview"></div>
+                            </div>
+                            <div id="estatisticasPreview" class="mt-3 text-sm text-gray-600"></div>
+                        </div>
+                        
+                        <!-- Progresso da importação -->
+                        <div id="progressoImportacao" class="mb-6 hidden">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">🔄 Progresso da Importação:</h4>
+                            <div class="bg-gray-200 rounded-full h-3 mb-2">
+                                <div id="barraProgresso" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <div id="textoProgresso" class="text-sm text-gray-600">Preparando importação...</div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+                            <button onclick="fecharModalImportacao()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                                Cancelar
+                            </button>
+                            <button id="btnImportarExcel" onclick="processarImportacao()" disabled class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                                </svg>
+                                <span>Importar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Configurar eventos
+            const arquivoInput = document.getElementById('arquivoExcel');
+            
+            arquivoInput.addEventListener('change', function(e) {
+                const arquivo = e.target.files[0];
+                if (arquivo) {
+                    document.getElementById('nomeArquivo').textContent = `📄 ${arquivo.name}`;
+                    document.getElementById('nomeArquivo').classList.remove('hidden');
+                    lerArquivoExcel(arquivo);
+                }
+            });
+
+            // Drag and drop
+            const dropZone = modal.querySelector('.border-dashed');
+            
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-400', 'bg-blue-50');
+            });
+            
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+            });
+            
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+                
+                const arquivo = e.dataTransfer.files[0];
+                if (arquivo && (arquivo.name.endsWith('.xlsx') || arquivo.name.endsWith('.xls') || arquivo.name.endsWith('.xlsm') || arquivo.name.endsWith('.xlsb'))) {
+                    arquivoInput.files = e.dataTransfer.files;
+                    document.getElementById('nomeArquivo').textContent = `📄 ${arquivo.name}`;
+                    document.getElementById('nomeArquivo').classList.remove('hidden');
+                    lerArquivoExcel(arquivo);
+                } else {
+                    mostrarNotificacao('❌ Por favor, selecione um arquivo Excel (.xlsx, .xls, .xlsm, .xlsb)', 'error');
+                }
+            });
+        }
+
+        function fecharModalImportacao() {
+            const modal = document.getElementById('modalImportacao');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Variável global para armazenar dados do Excel
+        let dadosExcel = [];
+
+        function lerArquivoExcel(arquivo) {
+            // Verificar se SheetJS está carregado
+            if (typeof XLSX === 'undefined') {
+                mostrarNotificacao('❌ Biblioteca SheetJS não carregada. Recarregue a página.', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    console.log('📊 Iniciando leitura do arquivo Excel...');
+                    
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { 
+                        type: 'array',
+                        cellDates: true,
+                        cellNF: false,
+                        cellText: false
+                    });
+                    
+                    console.log('📋 Planilhas encontradas:', workbook.SheetNames);
+                    
+                    // Pegar a primeira planilha
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Converter para JSON com cabeçalhos
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                        header: 1,
+                        defval: '',
+                        blankrows: false
+                    });
+                    
+                    console.log('📊 Dados brutos do Excel:', jsonData);
+                    
+                    if (jsonData.length < 2) {
+                        mostrarNotificacao('❌ Arquivo Excel deve ter pelo menos 2 linhas (cabeçalho + dados)', 'error');
+                        return;
+                    }
+                    
+                    // Processar dados - usar nomes exatos das colunas
+                    const headers = jsonData[0].map(h => h ? h.toString().trim() : '');
+                    const rows = jsonData.slice(1);
+                    
+                    console.log('📋 Cabeçalhos encontrados:', headers);
+                    
+                    // Verificar se pelo menos algumas colunas estão presentes (flexível)
+                    const colunasRecomendadas = ['Status', 'Chamado', 'Data Solicitação', 'Fornecedor', 'Carteira', 'Campanha', 'Tipo AGV'];
+                    const colunasEncontradas = colunasRecomendadas.filter(col => headers.includes(col));
+                    
+                    console.log(`📋 Colunas encontradas: ${colunasEncontradas.length}/${colunasRecomendadas.length}`, colunasEncontradas);
+                    
+                    if (colunasEncontradas.length === 0) {
+                        throw new Error(`❌ Nenhuma coluna reconhecida encontrada. Verifique se pelo menos uma das colunas está presente: ${colunasRecomendadas.join(', ')}`);
+                    }
+                    
+                    dadosExcel = rows.map((row, index) => {
+                        const obj = {};
+                        headers.forEach((header, colIndex) => {
+                            if (header && row[colIndex] !== undefined && row[colIndex] !== '') {
+                                let valor = row[colIndex];
+                                
+                                // Converter datas do Excel de forma mais robusta para colunas de data
+                                if (header.includes('Data') && valor) {
+                                    if (typeof valor === 'number' && valor > 25000 && valor < 50000) {
+                                        // Data serial do Excel
+                                        const excelEpoch = new Date(1900, 0, 1);
+                                        const data = new Date(excelEpoch.getTime() + (valor - 2) * 24 * 60 * 60 * 1000);
+                                        valor = formatarDataParaBrasil(data);
+                                    } else if (valor instanceof Date) {
+                                        // Já é um objeto Date
+                                        valor = formatarDataParaBrasil(valor);
+                                    } else if (typeof valor === 'string' && (valor.includes('/') || valor.includes('-'))) {
+                                        // String que pode ser uma data
+                                        const dataConvertida = converterStringParaData(valor);
+                                        if (dataConvertida) {
+                                            valor = formatarDataParaBrasil(dataConvertida);
+                                        }
+                                    }
+                                }
+                                
+                                obj[header] = valor;
+                            }
+                        });
+                        return obj;
+                    }).filter(obj => Object.keys(obj).length > 0);
+                    
+                    console.log('✅ Dados processados:', dadosExcel.length, 'registros');
+                    console.log('📄 Exemplo do primeiro registro:', dadosExcel[0]);
+                    
+                    if (dadosExcel.length === 0) {
+                        mostrarNotificacao('❌ Nenhum dado válido encontrado no arquivo Excel', 'error');
+                        return;
+                    }
+                    
+                    // Mostrar preview
+                    mostrarPreviewDados();
+                    
+                    // Habilitar botão de importar
+                    const btnImportar = document.getElementById('btnImportarExcel');
+                    if (btnImportar) {
+                        btnImportar.disabled = false;
+                        btnImportar.classList.remove('disabled:bg-gray-400');
+                        btnImportar.classList.add('bg-green-600', 'hover:bg-green-700');
+                        btnImportar.innerHTML = `
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Importar ${dadosExcel.length} Registros</span>
+                        `;
+                    }
+                    
+                    mostrarNotificacao(`✅ Arquivo lido com sucesso! ${dadosExcel.length} registros encontrados`, 'success');
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao ler arquivo Excel:', error);
+                    mostrarNotificacao(`❌ Erro ao ler arquivo Excel: ${error.message}`, 'error');
+                }
+            };
+            
+            reader.onerror = function(error) {
+                console.error('❌ Erro no FileReader:', error);
+                mostrarNotificacao('❌ Erro ao ler o arquivo. Tente novamente.', 'error');
+            };
+            
+            reader.readAsArrayBuffer(arquivo);
+        }
+
+        // Função para formatar data para o padrão brasileiro no preview
+        function formatarDataParaBrasil(data) {
+            if (!data || !(data instanceof Date) || isNaN(data.getTime())) {
+                return '';
+            }
+            
+            return data.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        // Função para converter string em data
+        function converterStringParaData(str) {
+            if (!str || typeof str !== 'string') return null;
+            
+            try {
+                // Tentar diferentes formatos
+                if (str.includes('/')) {
+                    const partes = str.split('/');
+                    if (partes.length === 3) {
+                        // Assumir DD/MM/YYYY (formato brasileiro)
+                        const dia = parseInt(partes[0]);
+                        const mes = parseInt(partes[1]) - 1; // Mês é 0-indexado
+                        const ano = parseInt(partes[2]);
+                        
+                        if (dia >= 1 && dia <= 31 && mes >= 0 && mes <= 11 && ano >= 1900) {
+                            return new Date(ano, mes, dia);
+                        }
+                    }
+                } else if (str.includes('-')) {
+                    // Formato YYYY-MM-DD ou DD-MM-YYYY
+                    const data = new Date(str);
+                    if (!isNaN(data.getTime())) {
+                        return data;
+                    }
+                }
+                
+                // Tentar conversão direta
+                const data = new Date(str);
+                if (!isNaN(data.getTime())) {
+                    return data;
+                }
+            } catch (error) {
+                console.error('Erro ao converter string para data:', error, str);
+            }
+            
+            return null;
+        }
+
+        function mostrarPreviewDados() {
+            const previewContainer = document.getElementById('previewDados');
+            const dadosPreview = document.getElementById('dadosPreview');
+            const estatisticasPreview = document.getElementById('estatisticasPreview');
+            
+            if (dadosExcel.length === 0) {
+                previewContainer.classList.add('hidden');
+                return;
+            }
+            
+            // Mostrar primeiros 5 registros em formato de tabela
+            const exemplos = dadosExcel.slice(0, 5);
+            
+            // Pegar todas as chaves únicas dos primeiros registros
+            const todasChaves = new Set();
+            exemplos.forEach(item => {
+                Object.keys(item).forEach(chave => todasChaves.add(chave));
+            });
+            
+            const chaves = Array.from(todasChaves).slice(0, 8); // Limitar a 8 colunas para não ficar muito largo
+            
+            let html = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-2 py-1 text-left font-medium text-gray-700">#</th>
+                                ${chaves.map(chave => `<th class="px-2 py-1 text-left font-medium text-gray-700">${chave}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            exemplos.forEach((item, index) => {
+                html += `
+                    <tr class="border-t border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                        <td class="px-2 py-1 font-medium text-blue-600">${index + 1}</td>
+                        ${chaves.map(chave => {
+                            let valor = item[chave] || '';
+                            if (typeof valor === 'string' && valor.length > 20) {
+                                valor = valor.substring(0, 20) + '...';
+                            }
+                            return `<td class="px-2 py-1 text-gray-700">${valor}</td>`;
+                        }).join('')}
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            if (dadosExcel.length > 5) {
+                html += `<p class="text-xs text-gray-500 mt-2 text-center">... e mais ${dadosExcel.length - 5} registros</p>`;
+            }
+            
+            dadosPreview.innerHTML = html;
+            
+            // Estatísticas
+            const campos = new Set();
+            dadosExcel.forEach(item => {
+                Object.keys(item).forEach(chave => campos.add(chave));
+            });
+            
+            estatisticasPreview.innerHTML = `
+                📊 <strong>${dadosExcel.length}</strong> registros encontrados | 
+                📋 <strong>${campos.size}</strong> campos diferentes | 
+                🔥 Pronto para importar para Firebase
+            `;
+            
+            previewContainer.classList.remove('hidden');
+        }
+
+        async function processarImportacao() {
+            if (!permissoes.podeIncluir) {
+                mostrarNotificacao('❌ Você não tem permissão para importar dados', 'error');
+                return;
+            }
+
+            if (dadosExcel.length === 0) {
+                mostrarNotificacao('❌ Nenhum dado para importar', 'error');
+                return;
+            }
+
+            console.log('✅ Sistema local verificado e pronto para importação');
+
+            const btnImportar = document.getElementById('btnImportarExcel');
+            const progressoContainer = document.getElementById('progressoImportacao');
+            const barraProgresso = document.getElementById('barraProgresso');
+            const textoProgresso = document.getElementById('textoProgresso');
+            
+            // Mostrar progresso
+            progressoContainer.classList.remove('hidden');
+            btnImportar.disabled = true;
+            btnImportar.innerHTML = '<div class="loading mr-2"></div>Iniciando importação...';
+
+            let sucessos = 0;
+            let erros = 0;
+            const total = dadosExcel.length;
+
+            try {
+                console.log(`🚀 Iniciando importação de ${total} registros para sistema local...`);
+                textoProgresso.textContent = `Iniciando importação de ${total} registros...`;
+                barraProgresso.style.width = '0%';
+
+                // Aguardar um pouco para mostrar o progresso inicial
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                for (let i = 0; i < dadosExcel.length; i++) {
+                    const item = dadosExcel[i];
+                    
+                    try {
+                        console.log(`📝 Processando registro ${i + 1}/${total}:`, item);
+                        
+                        // Atualizar progresso ANTES de processar
+                        const progressoAtual = ((i + 0.5) / total) * 100;
+                        barraProgresso.style.width = `${progressoAtual}%`;
+                        textoProgresso.textContent = `Processando registro ${i + 1} de ${total}...`;
+                        btnImportar.innerHTML = `<div class="loading mr-2"></div>Processando ${i + 1}/${total}...`;
+                        
+                        // Aguardar para mostrar progresso
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        
+                        console.log(`🔄 Iniciando processamento do registro ${i + 1}...`);
+                        
+                        // Permitir importação mesmo com campos em branco - usar valores padrão
+                        console.log(`📝 Processando registro ${i + 1} (permitindo campos em branco):`, item);
+
+                        // Mapear campos do Excel para o formato local usando nomes exatos
+                        // Permitir campos em branco com valores padrão apropriados
+                        const implantacao = {
+                            id: `EXCEL-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 6)}`,
+                            
+                            // Campos principais - usar valores padrão quando em branco
+                            status: mapearStatus(String(item['Status'] || 'andamento')),
+                            chamado: String(item['Chamado'] || `AUTO-${Date.now()}-${i + 1}`),
+                            campanha: String(item['Campanha'] || `Campanha Importada ${i + 1}`),
+                            fornecedor: mapearFornecedor(String(item['Fornecedor'] || 'Não informado')),
+                            carteira: String(item['Carteira'] || 'Não informada'),
+                            tipoAgv: mapearTipoAgv(String(item['Tipo AGV'] || 'Não informado')),
+                            
+                            // Datas - converter do formato brasileiro para ISO
+                            dataSolicitacao: converterDataParaISO(item['Data Solicitação']),
+                            dataEntrega: converterDataParaISO(item['Data Entrega']),
+                            dataCancelamento: converterDataParaISO(item['Data Cancelamento']),
+                            
+                            // Números
+                            licencas: parseInt(item['Licenças'] || 0) || 0,
+                            diasProducao: parseInt(item['Dias Produção'] || 0) || 0,
+                            
+                            // Metadados
+                            criadoPor: `${usuarioAtual.nome} (Importação Excel)`,
+                            criadoEm: new Date().toISOString(),
+                            atualizadoEm: new Date().toISOString(),
+                            importadoEm: new Date().toISOString(),
+                            origemImportacao: 'excel'
+                        };
+
+                        console.log(`💾 Salvando registro ${i + 1}:`, implantacao);
+
+                        // Salvar no sistema local
+                        implantacoes.push(implantacao);
+                        await setDoc(doc(window.db, "implantacoes", implantacao.id), implantacao);
+                        sucessos++;
+                        console.log(`🎉 Registro ${i + 1} salvo com sucesso!`);
+                        
+                    } catch (error) {
+                        console.error(`❌ Erro ao importar registro ${i + 1}:`, error, item);
+                        erros++;
+                        
+                        // Log detalhado do erro
+                        const motivoErro = error.message || error.code || 'Erro desconhecido';
+                        console.error(`📝 Detalhes do erro no registro ${i + 1}:`, {
+                            erro: motivoErro,
+                            codigoErro: error.code,
+                            dadosRegistro: item,
+                            linha: i + 2, // +2 porque começamos do índice 0 e temos cabeçalho
+                            stackTrace: error.stack
+                        });
+                        
+                        // Aguardar um pouco antes de continuar para não sobrecarregar
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Mostrar erro específico apenas nos primeiros erros
+                        if (erros <= 3) {
+                            mostrarNotificacao(`❌ Erro no registro ${i + 1}: ${motivoErro}`, 'error');
+                        }
+                    }
+
+                    // Atualizar progresso APÓS processar
+                    const progressoFinal = ((i + 1) / total) * 100;
+                    barraProgresso.style.width = `${progressoFinal}%`;
+                    textoProgresso.textContent = `Concluído ${i + 1} de ${total} registros (${sucessos} sucessos, ${erros} erros)`;
+                    btnImportar.innerHTML = `<div class="loading mr-2"></div>Salvando ${i + 1}/${total}...`;
+                    
+                    // Pausa menor para não travar
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+
+                // Salvar todos os dados no localStorage após importação
+                if (sucessos > 0) {
+                    console.log('💾 Salvando dados...');
+                    salvarDadosLocais();
+                    renderizarImplantacoes();
+                    atualizarEstatisticas();
+                }
+
+                // Resultado final
+                console.log(`🏁 Importação finalizada: ${sucessos} sucessos, ${erros} erros`);
+                
+                // Atualizar progresso final
+                barraProgresso.style.width = '100%';
+                textoProgresso.textContent = `Importação finalizada! ${sucessos} sucessos, ${erros} erros`;
+                btnImportar.innerHTML = `<div class="loading mr-2"></div>Finalizando...`;
+                
+                // Aguardar um pouco antes de mostrar resultado
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                if (sucessos > 0) {
+                    const mensagemSucesso = erros > 0 
+                        ? `💾 Importação concluída! ${sucessos} registros salvos. ${erros} registros com erro - verifique o console para detalhes.`
+                        : `💾 Importação 100% concluída! ${sucessos} registros salvos com sucesso!`;
+                    
+                    mostrarNotificacao(mensagemSucesso, erros > 0 ? 'warning' : 'success');
+                    
+                    // Fechar modal após 2 segundos
+                    setTimeout(() => {
+                        fecharModalImportacao();
+                    }, 2000);
+                } else {
+                    mostrarNotificacao(`❌ Nenhum registro foi importado. Total de erros: ${erros}. Verifique o console para detalhes dos erros.`, 'error');
+                    console.error('📋 Resumo dos erros de importação:', {
+                        totalRegistros: total,
+                        sucessos: sucessos,
+                        erros: erros,
+                        arquivoProcessado: dadosExcel
+                    });
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro geral na importação:', error);
+                mostrarNotificacao(`❌ Erro durante a importação: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botão
+                setTimeout(() => {
+                    btnImportar.disabled = false;
+                    btnImportar.innerHTML = `
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Importação Finalizada</span>
+                    `;
+                }, 1000);
+            }
+        }
+
+        // Funções auxiliares para mapear valores
+        function mapearStatus(status) {
+            const statusMap = {
+                'concluido': 'concluido',
+                'concluído': 'concluido',
+                'finalizado': 'concluido',
+                'produção': 'concluido',
+                'producao': 'concluido',
+                'andamento': 'andamento',
+                'em andamento': 'andamento',
+                'desenvolvimento': 'andamento',
+                'homologacao': 'homologacao',
+                'homologação': 'homologacao',
+                'teste': 'homologacao',
+                'cancelado': 'cancelado',
+                'cancelada': 'cancelado',
+                'parado': 'cancelado'
+            };
+            
+            return statusMap[status.toLowerCase()] || 'andamento';
+        }
+
+        function mapearFornecedor(fornecedor) {
+            const fornecedorMap = {
+                '2cx': '2cx',
+                'aspect': 'aspect',
+                'paneas': 'paneas',
+                'pontal': 'pontal',
+                'robbu': 'robbu',
+                'sinergytech': 'sinergytech',
+                'techia': 'techia'
+            };
+            
+            return fornecedorMap[fornecedor.toLowerCase()] || fornecedor;
+        }
+
+        function mapearTipoAgv(tipo) {
+            const tipoMap = {
+                'agv': 'agv-ia',
+                'agv com ia': 'agv-ia',
+                'agv-ia': 'agv-ia',
+                'localizador': 'localizador',
+                'localizador smartplay': 'localizador-smartplay',
+                'negociador': 'negociador',
+                'negociador smartplay': 'negociador-smartplay',
+                'recado': 'recado',
+                'preventivo': 'preventivo'
+            };
+            
+            return tipoMap[tipo.toLowerCase()] || tipo;
+        }
+
+        // Função para converter data do formato brasileiro para ISO (para salvar no Firebase)
+        function converterDataParaISO(valor) {
+            if (!valor) return '';
+            
+            try {
+                let data;
+                
+                // Se já é uma data válida
+                if (valor instanceof Date) {
+                    data = valor;
+                } else if (typeof valor === 'string') {
+                    // Se está no formato brasileiro DD/MM/YYYY
+                    if (valor.includes('/')) {
+                        const partes = valor.split('/');
+                        if (partes.length === 3 && partes[0].length <= 2) {
+                            // Formato DD/MM/YYYY (brasileiro)
+                            const dia = parseInt(partes[0]);
+                            const mes = parseInt(partes[1]) - 1; // Mês é 0-indexado
+                            const ano = parseInt(partes[2]);
+                            
+                            if (dia >= 1 && dia <= 31 && mes >= 0 && mes <= 11 && ano >= 1900) {
+                                data = new Date(ano, mes, dia);
+                            }
+                        }
+                    } else if (valor.includes('-')) {
+                        // Formato YYYY-MM-DD ou DD-MM-YYYY
+                        data = new Date(valor);
+                    } else {
+                        // Tentar conversão direta
+                        data = new Date(valor);
+                    }
+                } else if (typeof valor === 'number') {
+                    // Excel usa números seriais para datas
+                    if (valor > 25000 && valor < 50000) {
+                        // Provavelmente é uma data do Excel (entre 1968 e 2037)
+                        const excelEpoch = new Date(1900, 0, 1);
+                        data = new Date(excelEpoch.getTime() + (valor - 2) * 24 * 60 * 60 * 1000);
+                    } else {
+                        // Tentar como timestamp
+                        data = new Date(valor);
+                    }
+                }
+                
+                // Verificar se a data é válida
+                if (data && !isNaN(data.getTime())) {
+                    // Retornar no formato YYYY-MM-DD para compatibilidade com Firebase
+                    return data.toISOString().split('T')[0];
+                }
+                
+            } catch (error) {
+                console.error('Erro ao converter data para ISO:', error, valor);
+            }
+            
+            return '';
+        }
+
+        // Função antiga mantida para compatibilidade
+        function converterData(valor) {
+            return converterDataParaISO(valor);
+        }
+
+        function novaImplantacao() {
+            mostrarModalNovaImplantacao();
+        }
+
+        function mostrarModalNovaImplantacao() {
+            const modal = document.createElement('div');
+            modal.className = 'modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-y-auto">
+                    <div class="bg-gradient-to-r from-green-600 to-emerald-600 p-6 rounded-t-xl">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold text-white">🚀 Nova Implantação Firebase</h2>
+                            <button onclick="fecharModal()" class="text-white hover:text-gray-200 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <form class="p-6 space-y-6" id="formNovaImplantacao">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
+                                <select name="status" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                    <option value="">Selecione o status</option>
+                                    <option value="concluido">Concluído</option>
+                                    <option value="andamento">Em Andamento</option>
+                                    <option value="homologacao">Homologação</option>
+                                    <option value="cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Chamado *</label>
+                                <input type="text" name="chamado" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Ex: #2024-001">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data Solicitação *</label>
+                                <input type="date" name="dataSolicitacao" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="calcularDiasProducao()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Fornecedor *</label>
+                                <select name="fornecedor" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                    <option value="">Selecione o fornecedor</option>
+                                    <option value="2cx">2CX</option>
+                                    <option value="aspect">Aspect</option>
+                                    <option value="paneas">Paneas</option>
+                                    <option value="pontal">Pontal</option>
+                                    <option value="robbu">Robbu</option>
+                                    <option value="sinergytech">Sinergytech</option>
+                                    <option value="techia">TechIA</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Carteira *</label>
+                                <input type="text" name="carteira" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Ex: Cobrança PF">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Campanha *</label>
+                                <input type="text" name="campanha" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Ex: Campanha Verão 2024">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo AGV *</label>
+                                <select name="tipoAgv" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                    <option value="">Selecione o tipo</option>
+                                    <option value="agv-ia">AGV com IA</option>
+                                    <option value="localizador">Localizador</option>
+                                    <option value="localizador-smartplay">Localizador SmartPlay</option>
+                                    <option value="negociador">Negociador</option>
+                                    <option value="negociador-smartplay">Negociador SmartPlay</option>
+                                    <option value="recado">Recado</option>
+                                    <option value="preventivo">Preventivo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Licenças</label>
+                                <input type="number" name="licencas" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Número de licenças">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data Entrega</label>
+                                <input type="date" name="dataEntrega" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="calcularDiasProducao()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Dias Produção</label>
+                                <input type="number" name="diasProducao" readonly class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600" placeholder="Calculado automaticamente">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data Cancelamento</label>
+                                <input type="date" name="dataCancelamento" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            </div>
+                        </div>
+
+                        <!-- Seção de Métricas -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 Métricas de Performance</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Base</label>
+                                    <input type="number" name="base" min="0" step="1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Ex: 10000">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Spin</label>
+                                    <input type="number" name="spin" min="0" step="1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Ex: 8500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Hit Rate (%)</label>
+                                    <input type="number" name="hitRate" min="0" max="100" step="0.1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Ex: 12.5">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção de Observações -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">📝 Observações</label>
+                                    <textarea name="observacoes" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none" placeholder="Digite observações importantes sobre o projeto..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">🎯 Próximas Etapas</label>
+                                    <textarea name="proximasEtapas" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none" placeholder="Liste as próximas etapas do projeto..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+                            <button type="button" onclick="fecharModal()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                                🔥 Salvar no Firebase
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Adiciona evento de submit
+            const form = modal.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    criarImplantacao();
+                });
+            }
+
+            // Adicionar eventos de fechamento
+            const btnFechar = modal.querySelector('button[onclick="fecharModal()"]');
+            if (btnFechar) {
+                btnFechar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    fecharModal();
+                });
+            }
+
+            const btnCancelar = modal.querySelector('button[onclick="fecharModal()"]');
+            if (btnCancelar) {
+                btnCancelar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    fecharModal();
+                });
+            }
+
+            // Fechar modal clicando fora dele
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    fecharModal();
+                }
+            });
+
+            // Fechar modal com ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    fecharModal();
+                }
+            });
+        }
+
+        function fecharModal() {
+            // Buscar todos os modais exceto o de login
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (modal.id !== 'modalLogin') {
+                    modal.remove();
+                }
+            });
+        }
+
+        async function criarImplantacao() {
+            if (!permissoes.podeIncluir) {
+                mostrarNotificacao('❌ Você não tem permissão para criar implantações', 'error');
+                return;
+            }
+
+            const form = document.getElementById('formNovaImplantacao');
+            if (!form) {
+                mostrarNotificacao('❌ Formulário não encontrado', 'error');
+                return;
+            }
+
+            const formData = new FormData(form);
+            
+            // Validar campos obrigatórios
+            const camposObrigatorios = ['status', 'chamado', 'dataSolicitacao', 'fornecedor', 'carteira', 'campanha', 'tipoAgv'];
+            const camposFaltando = camposObrigatorios.filter(campo => !formData.get(campo));
+            
+            if (camposFaltando.length > 0) {
+                mostrarNotificacao(`❌ Campos obrigatórios não preenchidos: ${camposFaltando.join(', ')}`, 'error');
+                return;
+            }
+            
+            const novaImplantacao = {
+                id: `AGV-${Date.now()}`,
+                status: formData.get('status'),
+                chamado: formData.get('chamado'),
+                dataSolicitacao: formData.get('dataSolicitacao'),
+                fornecedor: formData.get('fornecedor'),
+                carteira: formData.get('carteira'),
+                campanha: formData.get('campanha'),
+                tipoAgv: formData.get('tipoAgv'),
+                licencas: parseInt(formData.get('licencas')) || 0,
+                dataEntrega: formData.get('dataEntrega'),
+                diasProducao: parseInt(formData.get('diasProducao')) || 0,
+                dataCancelamento: formData.get('dataCancelamento'),
+                base: parseInt(formData.get('base')) || 0,
+                spin: parseInt(formData.get('spin')) || 0,
+                hitRate: parseFloat(formData.get('hitRate')) || 0,
+                observacoes: formData.get('observacoes'),
+                proximasEtapas: formData.get('proximasEtapas'),
+                criadoPor: usuarioAtual.nome,
+                criadoEm: new Date().toISOString(),
+                atualizadoEm: new Date().toISOString()
+            };
+
+            // Mostrar loading
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="loading mr-2"></div>Salvando no Firebase...';
+
+            try {
+                console.log('💾 Iniciando salvamento...', novaImplantacao);
+                
+                // Salvar no sistema local
+                implantacoes.push(novaImplantacao);
+                salvarDadosLocais();
+                renderizarImplantacoes();
+                atualizarEstatisticas();
+                
+                console.log('✅ Nova implantação salva com sucesso!');
+                mostrarNotificacao('💾 Nova implantação salva com sucesso!', 'success');
+                fecharModal();
+            } catch (error) {
+                console.error('❌ Erro detalhado ao salvar:', {
+                    erro: error,
+                    message: error.message,
+                    stack: error.stack,
+                    dados: novaImplantacao
+                });
+                
+                const mensagemErro = error.message || 'Erro desconhecido ao salvar';
+                mostrarNotificacao(`❌ Erro ao salvar: ${mensagemErro}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        function verDetalhes(index) {
+            const implantacao = implantacoes[index];
+            if (!implantacao) {
+                mostrarNotificacao('Implantação não encontrada', 'error');
+                return;
+            }
+
+            // Compatibilidade com dados existentes
+            const campanha = implantacao.campanha || implantacao.nome_campanha || 'Campanha não informada';
+            const chamado = implantacao.chamado || implantacao.numero_chamado || 'Não informado';
+            const fornecedor = implantacao.fornecedor || implantacao.nome_fornecedor || 'Não informado';
+            const tipoAgv = implantacao.tipoAgv || implantacao.tipo_agv || implantacao.tipo || 'Não informado';
+            const carteira = implantacao.carteira || implantacao.nome_carteira || 'Não informada';
+            const dataSolicitacao = implantacao.dataSolicitacao || implantacao.data_solicitacao || implantacao.data_inicio;
+            const dataEntrega = implantacao.dataEntrega || implantacao.data_entrega || implantacao.data_fim;
+            const licencas = implantacao.licencas || implantacao.numero_licencas || implantacao.qtd_licencas || 0;
+            const diasProducao = implantacao.diasProducao || implantacao.dias_producao || implantacao.duracao_dias || 0;
+            const observacoes = implantacao.observacoes || implantacao.obs || implantacao.comentarios || 'Nenhuma observação registrada';
+            const criadoPor = implantacao.criadoPor || implantacao.criado_por || 'Sistema';
+
+            const modal = document.createElement('div');
+            modal.className = 'modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-y-auto">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-xl">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold text-white">📋 Detalhes Locais - ${chamado}</h2>
+                            <button onclick="fecharModal()" class="text-white hover:text-gray-200 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h3 class="font-semibold text-gray-800 mb-3">💾 Informações Locais</h3>
+                                <div class="space-y-2 text-sm">
+                                    <p><strong>Índice Local:</strong> ${index}</p>
+                                    <p><strong>Campanha:</strong> ${campanha}</p>
+                                    <p><strong>Chamado:</strong> ${chamado}</p>
+                                    <p><strong>Status:</strong> <span class="text-green-600">${implantacao.status || 'andamento'}</span></p>
+                                    <p><strong>Fornecedor:</strong> ${fornecedor}</p>
+                                    <p><strong>Tipo AGV:</strong> ${tipoAgv}</p>
+                                    <p><strong>Carteira:</strong> ${carteira}</p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h3 class="font-semibold text-gray-800 mb-3">📅 Cronograma</h3>
+                                <div class="space-y-2 text-sm">
+                                    <p><strong>Data Solicitação:</strong> ${formatarData(dataSolicitacao)}</p>
+                                    <p><strong>Data Entrega:</strong> ${formatarData(dataEntrega)}</p>
+                                    <p><strong>Duração:</strong> ${diasProducao} dias</p>
+                                    <p><strong>Licenças:</strong> ${licencas}</p>
+                                    <p><strong>Criado por:</strong> ${criadoPor}</p>
+                                    ${implantacao.dataCancelamento || implantacao.data_cancelamento ? `<p class="text-red-600"><strong>Cancelado em:</strong> ${formatarData(implantacao.dataCancelamento || implantacao.data_cancelamento)}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <h3 class="font-semibold text-gray-800 mb-3">📊 Métricas</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-blue-600">${implantacao.base?.toLocaleString() || 0}</p>
+                                    <p class="text-sm text-gray-600">Base</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-green-600">${implantacao.spin?.toLocaleString() || 0}</p>
+                                    <p class="text-sm text-gray-600">Spin</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-2xl font-bold text-purple-600">${(implantacao.hitRate || implantacao.hit_rate || 0)}%</p>
+                                    <p class="text-sm text-gray-600">Hit Rate</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <h3 class="font-semibold text-gray-800 mb-3">📝 Observações</h3>
+                            <p class="text-gray-700">${observacoes}</p>
+                            ${implantacao.proximasEtapas || implantacao.proximas_etapas ? `
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <h4 class="font-medium text-gray-800 mb-2">🎯 Próximas Etapas:</h4>
+                                    <p class="text-gray-600">${implantacao.proximasEtapas || implantacao.proximas_etapas}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button onclick="fecharModal()" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function editarImplantacao(index) {
+            if (!permissoes.podeEditar) {
+                mostrarNotificacao('Você não tem permissão para editar implantações', 'error');
+                return;
+            }
+
+            const implantacao = implantacoes[index];
+            if (!implantacao) {
+                mostrarNotificacao('Implantação não encontrada', 'error');
+                return;
+            }
+
+            // Compatibilidade com dados existentes
+            const chamado = implantacao.chamado || implantacao.numero_chamado || '';
+            const fornecedor = implantacao.fornecedor || implantacao.nome_fornecedor || '';
+            const tipoAgv = implantacao.tipoAgv || implantacao.tipo_agv || implantacao.tipo || '';
+            const carteira = implantacao.carteira || implantacao.nome_carteira || '';
+            const dataSolicitacao = implantacao.dataSolicitacao || implantacao.data_solicitacao || implantacao.data_inicio || '';
+            const dataEntrega = implantacao.dataEntrega || implantacao.data_entrega || implantacao.data_fim || '';
+            const licencas = implantacao.licencas || implantacao.numero_licencas || implantacao.qtd_licencas || '';
+            const observacoes = implantacao.observacoes || implantacao.obs || implantacao.comentarios || '';
+
+            const modal = document.createElement('div');
+            modal.className = 'modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-y-auto">
+                    <div class="bg-gradient-to-r from-yellow-600 to-orange-600 p-6 rounded-t-xl">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold text-white">✏️ Editar Local - ${chamado}</h2>
+                            <button onclick="fecharModal()" class="text-white hover:text-gray-200 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <form class="p-6 space-y-6" onsubmit="salvarEdicao(event, ${index})">
+                        <div class="bg-blue-50 p-4 rounded-lg mb-4">
+                            <p class="text-sm text-blue-800">💡 <strong>Compatibilidade:</strong> Este formulário funciona com dados existentes e novos campos serão adicionados apenas nos próximos registros.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                                <select name="status" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                                    <option value="concluido" ${(implantacao.status || 'andamento') === 'concluido' ? 'selected' : ''}>Concluído</option>
+                                    <option value="andamento" ${(implantacao.status || 'andamento') === 'andamento' ? 'selected' : ''}>Em Andamento</option>
+                                    <option value="homologacao" ${(implantacao.status || 'andamento') === 'homologacao' ? 'selected' : ''}>Homologação</option>
+                                    <option value="cancelado" ${(implantacao.status || 'andamento') === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Fornecedor</label>
+                                <select name="fornecedor" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                                    <option value="2cx" ${fornecedor === '2cx' ? 'selected' : ''}>2CX</option>
+                                    <option value="aspect" ${fornecedor === 'aspect' ? 'selected' : ''}>Aspect</option>
+                                    <option value="paneas" ${fornecedor === 'paneas' ? 'selected' : ''}>Paneas</option>
+                                    <option value="pontal" ${fornecedor === 'pontal' ? 'selected' : ''}>Pontal</option>
+                                    <option value="robbu" ${fornecedor === 'robbu' ? 'selected' : ''}>Robbu</option>
+                                    <option value="sinergytech" ${fornecedor === 'sinergytech' ? 'selected' : ''}>Sinergytech</option>
+                                    <option value="techia" ${fornecedor === 'techia' ? 'selected' : ''}>TechIA</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo AGV</label>
+                                <select name="tipoAgv" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                                    <option value="agv-ia" ${tipoAgv === 'agv-ia' ? 'selected' : ''}>AGV com IA</option>
+                                    <option value="localizador" ${tipoAgv === 'localizador' ? 'selected' : ''}>Localizador</option>
+                                    <option value="localizador-smartplay" ${tipoAgv === 'localizador-smartplay' ? 'selected' : ''}>Localizador SmartPlay</option>
+                                    <option value="negociador" ${tipoAgv === 'negociador' ? 'selected' : ''}>Negociador</option>
+                                    <option value="negociador-smartplay" ${tipoAgv === 'negociador-smartplay' ? 'selected' : ''}>Negociador SmartPlay</option>
+                                    <option value="recado" ${tipoAgv === 'recado' ? 'selected' : ''}>Recado</option>
+                                    <option value="preventivo" ${tipoAgv === 'preventivo' ? 'selected' : ''}>Preventivo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Carteira</label>
+                                <input type="text" name="carteira" value="${carteira}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data Solicitação</label>
+                                <input type="date" name="dataSolicitacao" value="${dataSolicitacao}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data Entrega</label>
+                                <input type="date" name="dataEntrega" value="${dataEntrega}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Licenças</label>
+                                <input type="number" name="licencas" value="${licencas}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Observações</label>
+                            <textarea name="observacoes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none">${observacoes}</textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+                            <button type="button" onclick="fecharModal()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors">
+                                💾 Atualizar Local
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        async function salvarEdicao(event, firebaseKey) {
+            event.preventDefault();
+            
+            if (!permissoes.podeEditar) {
+                mostrarNotificacao('Você não tem permissão para editar implantações', 'error');
+                return;
+            }
+
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            // Encontrar a implantação atual
+            const implantacaoAtual = implantacoes.find(impl => impl.firebaseKey === firebaseKey);
+            if (!implantacaoAtual) {
+                mostrarNotificacao('Implantação não encontrada', 'error');
+                return;
+            }
+
+            // Criar objeto atualizado
+            const implantacaoAtualizada = {
+                ...implantacaoAtual,
+                status: formData.get('status'),
+                fornecedor: formData.get('fornecedor'),
+                tipoAgv: formData.get('tipoAgv'),
+                carteira: formData.get('carteira'),
+                dataSolicitacao: formData.get('dataSolicitacao'),
+                dataEntrega: formData.get('dataEntrega'),
+                licencas: parseInt(formData.get('licencas')) || 0,
+                observacoes: formData.get('observacoes'),
+                atualizadoEm: new Date().toISOString()
+            };
+
+            // Recalcular dias de produção se necessário
+            if (implantacaoAtualizada.dataSolicitacao && implantacaoAtualizada.dataEntrega) {
+                const inicio = new Date(implantacaoAtualizada.dataSolicitacao);
+                const fim = new Date(implantacaoAtualizada.dataEntrega);
+                const diffTime = Math.abs(fim - inicio);
+                implantacaoAtualizada.diasProducao = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            // Remover firebaseKey do objeto antes de salvar
+            delete implantacaoAtualizada.firebaseKey;
+
+            // Mostrar loading
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="loading mr-2"></div>Atualizando Firebase...';
+
+            try {
+                const implantacaoRef = window.firebase.ref(window.firebase.database, `implantacoes/${firebaseKey}`);
+                await window.firebase.update(implantacaoRef, implantacaoAtualizada);
+                
+                mostrarNotificacao('🔥 Implantação atualizada no Firebase com sucesso!', 'success');
+                fecharModal();
+            } catch (error) {
+                console.error('Erro ao atualizar no Firebase:', error);
+                mostrarNotificacao('Erro ao atualizar no Firebase: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        async function confirmarExclusao(firebaseKey) {
+            if (!permissoes.podeExcluir) {
+                mostrarNotificacao('Você não tem permissão para excluir implantações', 'error');
+                return;
+            }
+
+            const implantacao = implantacoes.find(impl => impl.firebaseKey === firebaseKey);
+            if (!implantacao) {
+                mostrarNotificacao('Implantação não encontrada', 'error');
+                return;
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+                    <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 rounded-t-xl">
+                        <div class="text-center">
+                            <div class="bg-white/20 p-3 rounded-xl inline-block mb-4">
+                                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-white">⚠️ Confirmar Exclusão Firebase</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <p class="text-gray-700 mb-4">Tem certeza que deseja excluir do Firebase:</p>
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <p class="font-semibold">${implantacao.campanha || 'Campanha não informada'}</p>
+                            <p class="text-sm text-gray-600">Chamado: ${implantacao.chamado}</p>
+                            <p class="text-sm text-gray-600">Fornecedor: ${implantacao.fornecedor}</p>
+                            <p class="text-sm text-gray-600">🔥 Firebase Key: ${firebaseKey}</p>
+                        </div>
+                        <p class="text-red-600 text-sm mb-6">⚠️ Esta ação removerá permanentemente do Firebase!</p>
+                        
+                        <div class="flex space-x-4">
+                            <button onclick="fecharModal()" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                                Cancelar
+                            </button>
+                            <button onclick="excluirImplantacao('${firebaseKey}')" class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+                                🔥 Excluir do Firebase
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        async function excluirImplantacao(firebaseKey) {
+            try {
+                const implantacaoRef = window.firebase.ref(window.firebase.database, `implantacoes/${firebaseKey}`);
+                await window.firebase.remove(implantacaoRef);
+                
+                mostrarNotificacao('🔥 Implantação excluída do Firebase com sucesso!', 'success');
+                fecharModal();
+            } catch (error) {
+                console.error('Erro ao excluir do Firebase:', error);
+                mostrarNotificacao('Erro ao excluir do Firebase: ' + error.message, 'error');
+            }
+        }
+
+        // Sistema de notificações
+        function mostrarNotificacao(mensagem, tipo = 'info') {
+            const notificacaoExistente = document.querySelector('.notificacao');
+            if (notificacaoExistente) {
+                notificacaoExistente.remove();
+            }
+
+            const notificacao = document.createElement('div');
+            notificacao.className = `notificacao fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 translate-x-full`;
+            
+            const cores = {
+                'success': 'bg-green-500 text-white',
+                'error': 'bg-red-500 text-white',
+                'info': 'bg-blue-500 text-white',
+                'warning': 'bg-yellow-500 text-black'
+            };
+            
+            notificacao.className += ` ${cores[tipo] || cores.info}`;
+            notificacao.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="flex-1">${mensagem}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notificacao);
+            
+            setTimeout(() => {
+                notificacao.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                if (notificacao.parentElement) {
+                    notificacao.classList.add('translate-x-full');
+                    setTimeout(() => notificacao.remove(), 300);
+                }
+            }, 5000);
+        }
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99202e32042c9a86',t:'MTc2MTA0MzY4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<!-- FIREBASE FIRESTORE (integração adicionada) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      addDoc,
+      doc,
+      updateDoc,
+      deleteDoc,
+      getDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
+      authDomain: "controle-agv.firebaseapp.com",
+      projectId: "controle-agv",
+      storageBucket: "controle-agv.firebasestorage.app",
+      messagingSenderId: "220840335975",
+      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const implantacoesRef = collection(db, "implantacoes");
+
+  // Expor utilitários globalmente
+  window._firestore = { db, implantacoesRef };
+
+  // Carregamento em tempo real
+  function iniciarSincronizacaoFirestore() {
+      console.log("🌐 Conectando ao Firestore (coleção: implantacoes)...");
+      onSnapshot(implantacoesRef, (snapshot) => {
+          const lista = [];
+          snapshot.forEach(d => {
+              const data = d.data();
+              data.id = d.id;
+              lista.push(data);
+          });
+          // substituir o array global mantendo referência
+          window.implantacoes = lista.sort((a,b)=> (b.criadoEm||'').localeCompare(a.criadoEm||''));
+          console.log(`✅ ${lista.length} implantações sincronizadas do Firestore`);
+          if (typeof renderizarImplantacoes === "function") renderizarImplantacoes();
+          if (typeof atualizarEstatisticas === "function") atualizarEstatisticas();
+      }, (err)=>{
+          console.error("❌ Erro onSnapshot:", err);
+      });
+  }
+
+  async function salvarOuAtualizarTodos() {
+      if (!window.implantacoes || !Array.isArray(window.implantacoes)) return;
+      console.log("📡 Sincronizando itens locais para o Firestore...");
+
+      for (let i=0;i<window.implantacoes.length;i++) {
+          const item = window.implantacoes[i];
+          try {
+              // Remover propriedades transitórias que não queremos salvar, se existirem
+              const payload = Object.assign({}, item);
+              delete payload.id; // id is Firestore doc id
+              // If item has an id, update; otherwise add
+              if (item.id) {
+                  const docRef = doc(db, "implantacoes", item.id);
+                  await updateDoc(docRef, payload);
+              } else {
+                  const added = await addDoc(implantacoesRef, payload);
+                  // set the id back to local array for immediate reference
+                  item.id = added.id;
+              }
+          } catch (err) {
+              console.error("❌ Erro ao salvar/atualizar item no Firestore:", err, item);
+          }
+      }
+      console.log("✅ Sincronização concluída.");
+  }
+
+  // Funções usadas em botões/ações: adicionar, atualizar, excluir
+  async function adicionarImplantacaoFirestore(payload) {
+      try {
+          payload.criadoEm = new Date().toISOString();
+          payload.atualizadoEm = new Date().toISOString();
+          const added = await addDoc(implantacoesRef, payload);
+          console.log("✅ Implantação adicionada no Firestore:", added.id);
+          return added.id;
+      } catch (err) {
+          console.error("❌ Erro ao adicionar implantação:", err);
+          throw err;
+      }
+  }
+
+  async function atualizarImplantacaoFirestore(id, payload) {
+      try {
+          payload.atualizadoEm = new Date().toISOString();
+          const docRef = doc(db, "implantacoes", id);
+          await updateDoc(docRef, payload);
+          console.log("✅ Implantação atualizada no Firestore:", id);
+      } catch (err) {
+          console.error("❌ Erro ao atualizar implantação:", err);
+          throw err;
+      }
+  }
+
+  async function excluirImplantacaoFirestore(id) {
+      try {
+          const docRef = doc(db, "implantacoes", id);
+          await deleteDoc(docRef);
+          console.log("🗑️ Implantação excluída do Firestore:", id);
+      } catch (err) {
+          console.error("❌ Erro ao excluir implantação:", err);
+          throw err;
+      }
+  }
+
+  // === OVERRIDES GLOBAIS (mantêm layout/nomes originais, trocando apenas a persistência) ===
+  // Substitui salvarDadosLocais para sincronizar com Firestore
+  window.salvarDadosLocais = async function() {
+      console.warn("🔁 salvarDadosLocais() foi redirecionado para Firestore. Sincronizando...");
+      await salvarOuAtualizarTodos();
+  };
+
+  // Substitui inicializarSistemaCloud para conectar ao Firestore
+  window.inicializarSistemaCloud = function() {
+      console.log("🌐 inicializarSistemaCloud() -> iniciando sincronização Firestore");
+      window.sistemaInicializado = true;
+      iniciarSincronizacaoFirestore();
+  };
+
+  // Substitui exclusão global se existia função de mesmo nome
+  window.excluirImplantacao = async function(id) {
+      if (!id) {
+          console.error("Excluir chamado sem id");
+          return;
+      }
+      try {
+          await excluirImplantacaoFirestore(id);
+          // opcional: atualizar UI se necessário (onSnapshot cuidará disso)
+      } catch (err) {
+          mostrarNotificacao && mostrarNotificacao('Erro ao excluir no Firestore', 'error');
+      }
+  };
+
+  // Substitui salvar de edição/novo quando forem chamadas por nome
+  // Algumas partes do código chamam salvarEdicao / salvarNova... não sabemos todos os nomes,
+  // então expor funções convenientes que podem ser usadas no código existente:
+  window.salvarNovaImplantacao = async function(implantacao) {
+      return await adicionarImplantacaoFirestore(implantacao);
+  };
+
+  window.atualizarImplantacao = async function(id, dados) {
+      return await atualizarImplantacaoFirestore(id, dados);
+  };
+
+  // Se o código de importação chamar diretamente salvarDadosLocais após inserir na array,
+  // nossa sobrescrita salvarDadosLocais() que invoca salvarOuAtualizarTodos() cuidará da sincronização.
+  // Para maior compatibilidade, também interceptamos clicks no botão de importação para garantir
+  // que, após processar importação local, sincronize com Firestore.
+  document.addEventListener('click', function(e){
+      const el = e.target;
+      if (el && (el.id === 'btnImportarExcel' || el.closest && el.closest('#btnImportarExcel'))) {
+          // Esperar 200ms para que o processo original (que adiciona items a window.implantacoes) ocorra,
+          // então sincronizar para o Firestore.
+          setTimeout(()=>{
+              if (window.salvarDadosLocais) window.salvarDadosLocais();
+          }, 500);
+      }
+  });
+
+  // Iniciar automaticamente se o script carregar depois do DOM
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      if (!window.sistemaInicializado) {
+          window.inicializarSistemaCloud();
+      }
+  } else {
+      document.addEventListener('DOMContentLoaded', ()=>{
+          if (!window.sistemaInicializado) window.inicializarSistemaCloud();
+      });
+  }
+
+  // Expor para debugging
+  window._firestore_utils = {
+      iniciarSincronizacaoFirestore,
+      salvarOuAtualizarTodos,
+      adicionarImplantacaoFirestore,
+      atualizarImplantacaoFirestore,
+      excluirImplantacaoFirestore
+  };
+</script>
+
+
+<!-- UNIFICATED SCRIPT: Login, Import Hook, Paginação Dinâmica e integração -->
+<script>
+// --- Login robusto e inicialização ---
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const cpfInput = document.getElementById('cpfInput');
+        const formLogin = document.getElementById('formLogin');
+
+        // Função auxiliar para iniciar sistema local caso exista
+        async function iniciarPosLogin(cpf) {
+            try {
+                if (typeof fazerLogin === 'function') {
+                    await fazerLogin(cpf);
+                }
+            } catch (e) {
+                console.error('Erro em fazerLogin():', e);
+            }
+            try {
+                if (typeof ocultarModalLogin === 'function') ocultarModalLogin();
+            } catch (e) {}
+            try {
+                if (typeof inicializarSistemaCloud === 'function') inicializarSistemaCloud();
+            } catch (e) {}
+            try {
+                if (typeof renderizarImplantacoesPaginadas === 'function') renderizarImplantacoesPaginadas();
+            } catch (e) {}
+            try {
+                if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
+            } catch (e) {}
+        }
+
+        // Auto-login se CPF salvo
+                if (cpfSalvo && cpfSalvo.length === 11) {
+            // Reconstruir usuarioAtual caso necessário
+            if (typeof cpfsAdministradores !== 'undefined' && Array.isArray(cpfsAdministradores) && cpfsAdministradores.includes(cpfSalvo)) {
+                usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
+            } else {
+                usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
+            }
+            // Garantir permissões básicas conforme nível
+            if (usuarioAtual && usuarioAtual.nivel === 'admin') {
+                permissoes = { podeVer: true, podeEditar:true, podeExcluir:true, podeIncluir:true };
+            } else {
+                permissoes = { podeVer: true, podeEditar:false, podeExcluir:false, podeIncluir:false };
+            }
+            await iniciarPosLogin(cpfSalvo);
+        }
+
+        // Se existir formulário, configurar handler seguro
+        if (formLogin && cpfInput) {
+            // Máscara de CPF já pode existir; só garantir leitura limpa
+            formLogin.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const cpfLimpo = (cpfInput.value || '').replace(/\D/g, '');
+                if (!cpfLimpo || cpfLimpo.length !== 11) {
+                    if (typeof mostrarNotificacao === 'function') mostrarNotificacao('CPF inválido. Digite 11 dígitos.', 'error');
+                    return;
+                }
+
+                // Determinar nível
+                if (typeof cpfsAdministradores !== 'undefined' && Array.isArray(cpfsAdministradores) && cpfsAdministradores.includes(cpfLimpo)) {
+                    usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfLimpo };
+                    permissoes = { podeVer: true, podeEditar:true, podeExcluir:true, podeIncluir:true };
+                } else {
+                    usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfLimpo };
+                    permissoes = { podeVer: true, podeEditar:false, podeExcluir:false, podeIncluir:false };
+                }
+
+                try {
+                  //  localStorage.setItem('cpfUsuario', cpfLimpo);
+                } catch (err) {
+                    console.warn('Não foi possível salvar CPF no localStorage:', err);
+                }
+
+                await iniciarPosLogin(cpfLimpo);
+                if (typeof mostrarNotificacao === 'function') mostrarNotificacao('✅ Login realizado com sucesso!', 'success');
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao inicializar login automático:', error);
+    }
+});
+
+// --- Paginação dinâmica e renderização (suporta tanto cards quanto tabela) ---
+let paginaAtual = 1;
+const itensPorPagina = 10;
+
+function obterTotalImplantacoes() {
+    if (Array.isArray(window.implantacoes)) return window.implantacoes.length;
+    if (Array.isArray(implantacoes)) return implantacoes.length;
+    return 0;
+}
+function obterImplantacoesArray() {
+    if (Array.isArray(window.implantacoes)) return window.implantacoes;
+    if (Array.isArray(implantacoes)) return implantacoes;
+    return [];
+}
+
+function renderizarImplantacoesPaginadas() {
+    const arr = obterImplantacoesArray();
+    const total = arr.length;
+    const inicio = (paginaAtual - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const subset = arr.slice(inicio, fim);
+
+    // Preferência: se existir container de cards 'listaImplantacoes' usamos criarCardImplantacao
+    const containerCards = document.getElementById('listaImplantacoes');
+    const tabela = document.getElementById('tabela-implantacoes');
+
+    if (tabela) {
+        // modo tabela
+        tabela.innerHTML = '';
+        subset.forEach((item, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-2 py-1 text-sm">${inicio + idx + 1}</td>
+                <td class="px-2 py-1 text-sm">${item.campanha || item.nome || ''}</td>
+                <td class="px-2 py-1 text-sm">${item.status || ''}</td>
+                <td class="px-2 py-1 text-sm">${item.dataSolicitacao || item.data || item.data_solicitacao || ''}</td>
+                <td class="px-2 py-1 text-sm">${item.fornecedor || item.responsavel || ''}</td>
+                <td class="px-2 py-1 text-sm"><button class="px-2 py-1 rounded bg-yellow-600 text-white" onclick="(typeof editarImplantacao==='function'?editarImplantacao('${'${item.id || ''}'}'):console.warn('editarImplantacao não implementado'))">Editar</button></td>
+            `;
+            tabela.appendChild(row);
+        });
+    } else if (containerCards) {
+        // modo cards (usando criarCardImplantacao se existir)
+        containerCards.innerHTML = '';
+        subset.forEach((item, idx) => {
+            try {
+                if (typeof criarCardImplantacao === 'function') {
+                    const card = criarCardImplantacao(item, inicio + idx);
+                    containerCards.appendChild(card);
+                } else {
+                    // fallback simples
+                    const div = document.createElement('div');
+                    div.className = 'bg-white/10 rounded p-4';
+                    div.innerHTML = `<h4 class="font-bold">${item.campanha || item.nome || ''}</h4><p>${item.fornecedor || ''}</p>`;
+                    containerCards.appendChild(div);
+                }
+            } catch (e) {
+                console.error('Erro ao criar card:', e);
+            }
+        });
+    } else {
+        // Se não existe nem tabela nem container, tentar inserir no console
+        console.warn('Nenhum container encontrado para renderizar implantações (tabela-implantacoes ou listaImplantacoes).');
+    }
+
+    atualizarBotoesPaginacao();
+}
+
+// Atualiza botões dinamicamente dentro do container #paginacao ou .paginacao
+function atualizarBotoesPaginacao() {
+    const totalPaginas = Math.max(1, Math.ceil(obterTotalImplantacoes() / itensPorPagina));
+    let paginador = document.getElementById('paginacao');
+    if (!paginador) paginador = document.querySelector('.paginacao');
+
+    if (!paginador) {
+        console.warn('Container de paginação não encontrado (id="paginacao" ou class="paginacao").');
+        return;
+    }
+
+    // limpar e construir
+    paginador.innerHTML = '';
+
+    // botão anterior
+    const btnPrev = document.createElement('button');
+    btnPrev.className = 'px-3 py-2 rounded mr-2 bg-white/10 hover:bg-white/20 text-white';
+    btnPrev.textContent = '◀';
+    btnPrev.onclick = () => {
+        if (paginaAtual > 1) { paginaAtual--; renderizarImplantacoesPaginadas(); }
+    };
+    paginador.appendChild(btnPrev);
+
+    // botões de página (limitar a um bloco visível grande, com elipses se necessário)
+    const maxVisiveis = 7;
+    let start = Math.max(1, paginaAtual - Math.floor(maxVisiveis/2));
+    let end = Math.min(totalPaginas, start + maxVisiveis - 1);
+    if (end - start + 1 < maxVisiveis) {
+        start = Math.max(1, end - maxVisiveis + 1);
+    }
+
+    if (start > 1) {
+        const btn = document.createElement('button');
+        btn.textContent = '1';
+        btn.className = paginaAtual===1 ? 'px-3 py-2 rounded bg-indigo-600 text-white mr-1' : 'px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-white mr-1';
+        btn.onclick = () => { paginaAtual = 1; renderizarImplantacoesPaginadas(); };
+        paginador.appendChild(btn);
+        if (start > 2) {
+            const span = document.createElement('span'); span.textContent = '...'; span.className='px-2 text-white/70'; paginador.appendChild(span);
+        }
+    }
+
+    for (let i = start; i <= end; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = (i===paginaAtual) ? 'px-3 py-2 rounded bg-indigo-600 text-white mr-1' : 'px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-white mr-1';
+        btn.onclick = (()=>{ const p=i; return ()=>{ paginaAtual=p; renderizarImplantacoesPaginadas(); }; })();
+        paginador.appendChild(btn);
+    }
+
+    if (end < totalPaginas) {
+        if (end < totalPaginas - 1) {
+            const span = document.createElement('span'); span.textContent = '...'; span.className='px-2 text-white/70'; paginador.appendChild(span);
+        }
+        const btnLast = document.createElement('button');
+        btnLast.textContent = totalPaginas;
+        btnLast.className = 'px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-white mr-1';
+        btnLast.onclick = () => { paginaAtual = totalPaginas; renderizarImplantacoesPaginadas(); };
+        paginador.appendChild(btnLast);
+    }
+
+    // botão próximo
+    const btnNext = document.createElement('button');
+    btnNext.className = 'px-3 py-2 rounded ml-2 bg-white/10 hover:bg-white/20 text-white';
+    btnNext.textContent = '▶';
+    btnNext.onclick = () => {
+        if (paginaAtual < totalPaginas) { paginaAtual++; renderizarImplantacoesPaginadas(); }
+    };
+    paginador.appendChild(btnNext);
+}
+
+// --- Hook para processarImportacao (se existir) para garantir atualização pós-importação ---
+(function() {
+    if (typeof processarImportacao === 'function') {
+        const _orig = processarImportacao;
+        window.processarImportacao = async function() {
+            try {
+                await _orig.apply(this, arguments);
+            } catch (e) {
+                console.error('Erro ao executar processarImportacao original:', e);
+            }
+            try { salvarDadosLocais(); } catch(e) {}
+            try { renderizarImplantacoesPaginadas(); } catch(e) {}
+            try { atualizarEstatisticas(); } catch(e) {}
+            try { fecharModalImportacao(); } catch(e) {}
+        };
+    } else {
+        // Se não existe, expor uma função que pode ser chamada manualmente
+        window.finalizarImportacao = function() {
+            try { salvarDadosLocais(); } catch(e) {}
+            try { renderizarImplantacoesPaginadas(); } catch(e) {}
+            try { atualizarEstatisticas(); } catch(e) {}
+            try { fecharModalImportacao(); } catch(e) {}
+        };
+    }
+})();
+
+// Se alguém chamar window.renderizarImplantacoes, garantimos que use a versão paginada
+window.renderizarImplantacoes = function() {
+    try {
+        renderizarImplantacoesPaginadas();
+    } catch (e) {
+        console.error('Erro ao chamar renderizarImplantacoes paginada:', e);
+    }
+};
+
+// Inicializar paginação ao carregar, se houver dados
+window.addEventListener('load', function() {
+    try {
+        if (obterTotalImplantacoes() > 0) {
+            renderizarImplantacoesPaginadas();
+        } else {
+            // caso não haja dados, ainda atualiza botoes (gera paginação mínima)
+            atualizarBotoesPaginacao();
+        }
+    } catch (e) {
+        console.error('Erro na inicialização da paginação:', e);
+    }
+});
+</script>
+
+
+<!-- ===== PAGINAÇÃO FUNCIONAL ===== -->
+<script>
+let paginaAtual = 1;
+const itensPorPagina = 20;
+
+function renderizarImplantacoesPaginado() {
+    const container = document.getElementById('listaImplantacoes');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (implantacoes.length === 0) {
+        renderizarImplantacoes(); // mantém layout original
+        return;
+    }
+
+    const inicio = (paginaAtual - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const pagina = implantacoes.slice(inicio, fim);
+
+    pagina.forEach((impl, index) => {
+        const card = criarCardImplantacao(impl, inicio + index);
+        container.appendChild(card);
+    });
+
+    renderizarPaginacao();
+}
+
+function renderizarPaginacao() {
+    const totalPaginas = Math.ceil(implantacoes.length / itensPorPagina);
+    const paginacaoContainer = document.querySelector('.paginacao-container');
+
+    if (!paginacaoContainer) {
+        const main = document.querySelector('main');
+        const div = document.createElement('div');
+        div.className = 'paginacao-container flex justify-center items-center space-x-2 mt-12';
+        main.appendChild(div);
+    }
+
+    const container = document.querySelector('.paginacao-container');
+    container.innerHTML = '';
+
+    if (totalPaginas <= 1) return;
+
+    const btnAnterior = document.createElement('button');
+    btnAnterior.className = 'bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors';
+    btnAnterior.innerHTML = '&lt;';
+    btnAnterior.onclick = () => irParaPagina(paginaAtual - 1);
+    btnAnterior.disabled = paginaAtual === 1;
+    container.appendChild(btnAnterior);
+
+    for (let i = 1; i <= totalPaginas; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = (i === paginaAtual)
+            ? 'bg-indigo-600 px-4 py-2 rounded-lg text-white font-medium'
+            : 'bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors';
+        btn.onclick = () => irParaPagina(i);
+        container.appendChild(btn);
+    }
+
+    const btnProximo = document.createElement('button');
+    btnProximo.className = 'bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors';
+    btnProximo.innerHTML = '&gt;';
+    btnProximo.onclick = () => irParaPagina(paginaAtual + 1);
+    btnProximo.disabled = paginaAtual === totalPaginas;
+    container.appendChild(btnProximo);
+}
+
+function irParaPagina(pagina) {
+    const totalPaginas = Math.ceil(implantacoes.length / itensPorPagina);
+    if (pagina < 1 || pagina > totalPaginas) return;
+    paginaAtual = pagina;
+    renderizarImplantacoesPaginado();
+}
+
+// Substituir renderização original para aplicar paginação
+const renderizarImplantacoesOriginal = renderizarImplantacoes;
+renderizarImplantacoes = function() {
+    renderizarImplantacoesPaginado();
+};
+
+// Reaplicar paginação automaticamente
+const salvarDadosLocaisOriginal = salvarDadosLocais;
+salvarDadosLocais = function() {
+    salvarDadosLocaisOriginal();
+    renderizarImplantacoesPaginado();
+};
+
+const inicializarSistemaCloudOriginal = inicializarSistemaCloud;
+inicializarSistemaCloud = function() {
+    inicializarSistemaCloudOriginal();
+    renderizarImplantacoesPaginado();
+};
+</script>
+<!-- ===== FIRESTORE SYNC (V111) ===== -->
+<!-- IMPORTANTE: Cole suas credenciais firebaseConfig no bloco mais abaixo (remova os valores comentados) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script>
+// === CONFIGURAÇÃO DO FIREBASE ===
+// --- ATENÇÃO: cole suas credenciais AQUI, substituindo os valores comentados ---
+// NÃO cole essas credenciais em chat público — cole apenas no seu arquivo local.
+// Exemplo de objeto para colar (substitua os textos "COLE_AQUI..." pelos seus valores):
+/*
+const firebaseConfig = {
+  apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
+  authDomain: "controle-agv.firebaseapp.com",
+  projectId: "controle-agv",
+  storageBucket: "controle-agv.firebasestorage.app",
+  messagingSenderId: "220840335975",
+  appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
+};
+*/
+ 
+// NÃO COLOQUE AS CHAVES AQUI NO CHAT. Cole-as diretamente no arquivo V111 após o download.
+
+let firebaseInitialized = false;
+let firestoreCollectionRef = null;
+let isSyncingWithFirestore = false;
+const COLLECTION_NAME = "implantacoes"; // coleção usada no Firestore
+
+function inicializarFirestoreSeConfigurado() {
+    try {
+        if (typeof firebaseConfig !== 'undefined' && firebaseConfig) {
+            if (!firebaseInitialized) {
+                // inicializa compat SDK
+                firebase.initializeApp(firebaseConfig);
+                const db = firebase.firestore();
+                firestoreCollectionRef = db.collection(COLLECTION_NAME);
+                firebaseInitialized = true;
+                console.log('✅ Firebase inicializado (compat).');
+
+                // Ouvir alterações em tempo real
+                firestoreCollectionRef.onSnapshot(snapshot => {
+                    if (isSyncingWithFirestore) return;
+                    const dados = [];
+                    snapshot.forEach(doc => {
+                        const item = doc.data();
+                        item.id = item.id || doc.id;
+                        dados.push(item);
+                    });
+                    console.log('🔔 Atualização recebida do Firestore:', dados.length, 'registros');
+                    implantacoes = dados;
+                    // Atualiza localStorage (usa cópia original se existir)
+                    if (typeof salvarDadosLocaisOriginal === 'function') {
+                        salvarDadosLocaisOriginal();
+                    } else {
+                        //try { localStorage.setItem('implantacoes_agv', JSON.stringify(implantacoes)); } catch(e){}
+                    }
+                    renderizarImplantacoes();
+                    atualizarEstatisticas();
+                }, err => {
+                    console.error('❌ Erro ao ouvir Firestore:', err);
+                });
+            }
+        } else {
+            console.log('⚠️ Firebase não configurado: cole firebaseConfig no arquivo V111 para ativar sincronização.');
+        }
+    } catch (e) {
+        console.error('❌ Erro inicializando Firestore:', e);
+    }
+}
+
+// Envia todo o conjunto local para Firestore (batch)
+async function sincronizarComFirestore() {
+    if (!firebaseInitialized || !firestoreCollectionRef) return;
+    try {
+        isSyncingWithFirestore = true;
+        const db = firebase.firestore();
+        const batch = db.batch();
+        implantacoes.forEach(item => {
+            // usa item.id se existir, caso contrário permite Firestore gerar id
+            const docRef = item.id ? firestoreCollectionRef.doc(item.id) : firestoreCollectionRef.doc();
+            // garante que o item terá id (para manter consistência local <-> remoto)
+            if (!item.id) item.id = docRef.id;
+            batch.set(docRef, item, { merge: true });
+        });
+        await batch.commit();
+        console.log('✅ Sincronização com Firestore concluída:', implantacoes.length, 'registros');
+    } catch (err) {
+        console.error('❌ Erro ao sincronizar com Firestore:', err);
+    } finally {
+        // pequeno delay para evitar loop com o onSnapshot
+        setTimeout(()=>{ isSyncingWithFirestore = false; }, 500);
+    }
+}
+
+// Inicializar automaticamente quando a página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarFirestoreSeConfigurado();
+});
+
+// Integrar com salvarDadosLocais original (preservando comportamento)
+if (typeof salvarDadosLocais === 'function') {
+    const originalSalvar = salvarDadosLocais;
+    // Expor original para o listener de snapshot usar sem regravar novamente
+    window.salvarDadosLocaisOriginal = originalSalvar;
+    salvarDadosLocais = function() {
+        // chama original (salva no localStorage)
+        originalSalvar();
+        // tenta inicializar Firebase (caso as credenciais tenham sido adicionadas)
+        try { inicializarFirestoreSeConfigurado(); } catch(e){}
+        // sincroniza em background
+        sincronizarComFirestore();
+    };
+} else {
+    console.warn('⚠️ salvarDadosLocais não encontrado. Importações ainda serão locais até integrar manualmente.');
+}
+
+// Forçar carregar do Firestore ao inicializar sistema local se disponível
+if (typeof inicializarSistemaCloud === 'function') {
+    const originalInit = inicializarSistemaCloud;
+    window.inicializarSistemaCloudOriginal = originalInit;
+    inicializarSistemaCloud = function() {
+        originalInit();
+        try { inicializarFirestoreSeConfigurado(); } catch(e){}
+        if (firebaseInitialized && firestoreCollectionRef) {
+            firestoreCollectionRef.get().then(snapshot => {
+                const dados = [];
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    item.id = item.id || doc.id;
+                    dados.push(item);
+                });
+                if (dados.length > 0) {
+                    implantacoes = dados;
+                    if (typeof salvarDadosLocaisOriginal === 'function') {
+                        salvarDadosLocaisOriginal();
+                    } else {
+                       // try { localStorage.setItem('implantacoes_agv', JSON.stringify(implantacoes)); } catch(e){}
+                    }
+                    renderizarImplantacoes();
+                    atualizarEstatisticas();
+                }
+            }).catch(err => console.error('❌ Erro ao buscar dados iniciais do Firestore:', err));
+        }
+    };
+} else {
+    console.warn('⚠️ inicializarSistemaCloud não encontrado.');
+}
+
+// Utilitário para forçar sincronização manualmente (útil para admin/debug)
+function forcarSincronizacao() {
+    try { inicializarFirestoreSeConfigurado(); } catch(e){}
+    sincronizarComFirestore();
+    mostrarNotificacao('🔄 Sincronização forçada iniciada', 'success');
+}
+</script>
+<!-- ===== FIM FIRESTORE SYNC ===== -->
+
+
+<!-- ===== INTEGRAÇÃO FIRESTORE - V2 (substitui localStorage) ===== -->
+<!-- INSTRUÇÕES: Cole seu objeto firebaseConfig abaixo (remova o comentário) para ativar.
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  // --- COLE O firebaseConfig AQUI (remova os comentários) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
+      authDomain: "controle-agv.firebaseapp.com",
+      projectId: "controle-agv",
+      storageBucket: "controle-agv.firebasestorage.app",
+      messagingSenderId: "220840335975",
+      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
+    };
+
+  // Não colocar chaves em chats públicos. Cole apenas no arquivo local.
+  const COLLECTION_NAME = "implantacoes";
+  let firebaseInitialized = false;
+  let auth = null;
+  let db = null;
+  let colRef = null;
+  let unsubscribeSnapshot = null;
+
+  function initFirebase() {
+    if (firebaseInitialized) return;
+    if (typeof firebaseConfig === 'undefined' || !firebaseConfig) {
+      console.warn('Firestore não configurado (firebaseConfig ausente). Cole suas credenciais no arquivo.');
+      return;
+    }
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+      colRef = db.collection(COLLECTION_NAME);
+      firebaseInitialized = true;
+      console.log('✅ Firebase inicializado (V2)');
+      attachAuthListener();
+    } catch(e) {
+      console.error('Erro inicializando Firebase:', e);
+    }
+  }
+
+  function attachAuthListener() {
+    if (!auth) return;
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        console.log('🔐 Auth: usuário autenticado (uid):', user.uid);
+        startRealtimeListener();
+      } else {
+        console.log('🔓 Auth: sem usuário — autenticando anonimamente...');
+        auth.signInAnonymously().catch(err=>console.error('Erro login anônimo:', err));
+      }
+    });
+  }
+
+  function startRealtimeListener() {
+    if (!colRef) return;
+    if (unsubscribeSnapshot) {
+      try { unsubscribeSnapshot(); } catch(e){}
+      unsubscribeSnapshot = null;
+    }
+    unsubscribeSnapshot = colRef.orderBy('criadoEm','desc').onSnapshot(snapshot => {
+      const dados = [];
+      snapshot.forEach(doc => {
+        const item = doc.data();
+        item.id = doc.id;
+        dados.push(item);
+      });
+      // Replace global implantacoes array and re-render
+      try {
+        window.implantacoes = dados;
+        if (typeof renderizarImplantacoes === 'function') renderizarImplantacoes();
+        if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
+      } catch(e) { console.error(e); }
+      console.log('🔁 Sincronizado com Firestore — registros:', dados.length);
+    }, err => {
+      console.error('Erro snapshot Firestore:', err);
+    });
+  }
+
+  // Override initialization to use Firebase-only
+  if (typeof window.inicializarSistemaCloud === 'function') {
+    const origInit = window.inicializarSistemaCloud;
+    window.inicializarSistemaCloud = function() {
+      // do not call original local storage initialization
+      initFirebase();
+      // originalInit intentionally not called to avoid localStorage usage
+      console.log('initialization replaced: running Firebase-only mode');
+    };
+  } else {
+    window.inicializarSistemaCloud = function() { initFirebase(); };
+  }
+
+  // Disable local save function if present
+  if (typeof window.salvarDadosLocais === 'function') {
+    window.salvarDadosLocais = function() {
+      console.log('salvarDadosLocais desativado (modo Firestore). Use salvarImplantacaoFirestore/confirmarExclusao.');
+    };
+  }
+
+  // Replace salvar/editar/excluir operations to act on Firestore
+  window.salvarImplantacaoFirestore = async function(implantacao) {
+    if (!firebaseInitialized) { initFirebase(); if (!firebaseInitialized) throw new Error('Firebase não inicializado'); }
+    try {
+      if (!implantacao.id) {
+        const docRef = colRef.doc();
+        implantacao.id = docRef.id;
+        implantacao.criadoEm = new Date().toISOString();
+        implantacao.atualizadoEm = new Date().toISOString();
+        await docRef.set(implantacao);
+      } else {
+        implantacao.atualizadoEm = new Date().toISOString();
+        await colRef.doc(implantacao.id).set(implantacao, { merge: true });
+      }
+      console.log('Registro salvo no Firestore:', implantacao.id);
+      return implantacao;
+    } catch(e) {
+      console.error('Erro salvarImplantacaoFirestore:', e);
+      throw e;
+    }
+  };
+
+  // Map existing UI functions to Firestore functions where appropriate
+  // If your code calls novaImplantacao()/editarImplantacao()/confirmarExclusao(index), we'll provide minimal adapters.
+  window.confirmarExclusao = async function(indexOrId) {
+    try {
+      let id = indexOrId;
+      if (typeof indexOrId === 'number') {
+        const item = window.implantacoes && window.implantacoes[indexOrId];
+        if (!item) return;
+        id = item.id;
+      }
+      if (!id) return;
+      if (!firebaseInitialized) initFirebase();
+      await colRef.doc(id).delete();
+      console.log('Documento excluído:', id);
+    } catch(e) {
+      console.error('Erro ao excluir documento:', e);
+      throw e;
+    }
+  };
+
+  // Adapt processarImportacao to write window.dadosExcel into Firestore
+  window.processarImportacao = async function() {
+    try {
+      if (!window.dadosExcel || !Array.isArray(window.dadosExcel) || window.dadosExcel.length === 0) {
+        alert('Nenhum dado para importar.');
+        return;
+      }
+      if (!firebaseInitialized) initFirebase();
+      const promises = [];
+      for (let i=0;i<window.dadosExcel.length;i++) {
+        const row = window.dadosExcel[i];
+        const docRef = colRef.doc();
+        const impl = Object.assign({}, row);
+        impl.id = docRef.id;
+        impl.criadoEm = new Date().toISOString();
+        impl.atualizadoEm = new Date().toISOString();
+        impl.origemImportacao = 'excel';
+        promises.push(docRef.set(impl));
+      }
+      await Promise.all(promises);
+      alert('Importação concluída. Registros enviados ao Firestore.');
+      // trigger immediate refresh via snapshot listener
+    } catch(e) {
+      console.error('Erro processarImportacao:', e);
+      alert('Erro ao importar. Veja console.');
+    }
+  };
+
+  // When original code calls salvarDadosLocais after editing, override edit/save flows by providing a helper function that editors should call.
+  // If your UI calls a specific function to persist forms, you can update it to call salvarImplantacaoFirestore instead.
+  // But we also provide a gentle global hook: if code calls salvarDadosLocais(), it's now a no-op; editors should call salvarImplantacaoFirestore(document).
+  window.salvarImplantacao = async function(implantacao) {
+    return await window.salvarImplantacaoFirestore(implantacao);
+  };
+
+  
+  // Auto-init on DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', function(){ initFirebase(); });
+
+})(); // IIFE
+</script>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, onSnapshot, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
+      authDomain: "controle-agv.firebaseapp.com",
+      projectId: "controle-agv",
+      storageBucket: "controle-agv.firebasestorage.app",
+      messagingSenderId: "220840335975",
+      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
+    };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.db = db; // deixa acessível para o resto do script
+</script>
+</body>
+</html>
