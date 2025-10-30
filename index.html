@@ -1271,16 +1271,18 @@ onSnapshot(colRef, (snapshot) => {
 
                         console.log(`💾 Salvando registro ${i + 1}:`, implantacao);
 
-                        // Salvar no sistema local
-                        implantacoes.push(implantacao);
-                        await setDoc(doc(window.db, "implantacoesnew", implantacao.id), implantacao);
-                        sucessos++;
-                        console.log(`🎉 Registro ${i + 1} salvo com sucesso!`);
-                        
-                    } catch (error) {
-                        console.error(`❌ Erro ao importar registro ${i + 1}:`, error, item);
-                        erros++;
-                        
+// Salvar no sistema local
+implantacoes.push(implantacao);
+
+try {
+  await setDoc(
+    doc(window.db, "implantacoesnew", registro.id),
+    registro
+  );
+} catch (error) {
+  console.error(`❌ Erro ao importar registro ${i + 1}:`, error, registro);
+  erros++;
+}                      
                         // Log detalhado do erro
                         const motivoErro = error.message || error.code || 'Erro desconhecido';
                         console.error(`📝 Detalhes do erro no registro ${i + 1}:`, {
