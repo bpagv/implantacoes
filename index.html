@@ -2914,17 +2914,15 @@ function forcarSincronizacao() {
     }
   }
 
-  function attachAuthListener() {
-    if (!auth) return;
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        console.log('🔐 Auth: usuário autenticado (uid):', user.uid);
-        startRealtimeListener();
-      } else {
-        console.log('🔓 Auth: sem usuário — autenticando anonimamente...');
-        auth.signInAnonymously().catch(err=>console.error('Erro login anônimo:', err));
-      }
-    });
+function attachAuthListener() {
+try {
+  const auth = getAuth(app);
+  signInAnonymously(auth)
+    .then(() => console.log("auth: anônimo ativo"))
+    .catch(() => console.warn("⚠️ Login anônimo ignorado (sem autenticação)."));
+} catch(e) {
+  console.warn("⚠️ Firebase Auth não utilizado neste ambiente.");
+}
   }
 
   function startRealtimeListener() {
