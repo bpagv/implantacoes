@@ -351,7 +351,7 @@ console.log("🔥 Firestore conectado com sucesso");
 async function inicializarSistemaCloud() {
   try {
     console.log("🔥 Conectando ao Firestore...");
-    const colRef = collection(window.db, "implantacoes");
+    const colRef = collection(window.db, "implantacoesnew");
 
 onSnapshot(colRef, (snapshot) => {
   implantacoes = [];
@@ -368,7 +368,7 @@ onSnapshot(colRef, (snapshot) => {
 	async function salvarDadosLocais() {
 	  try {
 	    for (const impl of implantacoes) {
-	      const ref = doc(window.db, "implantacoes", impl.id);
+	      const ref = doc(window.db, "implantacoesnew", impl.id);
 	      await setDoc(ref, impl, { merge: true });
 	    }
     console.log('💾 Dados salvos no Firestore com sucesso');
@@ -1270,7 +1270,7 @@ onSnapshot(colRef, (snapshot) => {
 
                         // Salvar no sistema local
                         implantacoes.push(implantacao);
-                        await setDoc(doc(window.db, "implantacoes", implantacao.id), implantacao);
+                        await setDoc(doc(window.db, "implantacoesnew", implantacao.id), implantacao);
                         sucessos++;
                         console.log(`🎉 Registro ${i + 1} salvo com sucesso!`);
                         
@@ -2180,7 +2180,7 @@ onSnapshot(colRef, (snapshot) => {
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const implantacoesRef = collection(db, "implantacoes");
+  const implantacoesRef = collection(db, "implantacoesnew");
 
   // Expor utilitários globalmente
   window._firestore = { db, implantacoesRef };
@@ -2217,7 +2217,7 @@ onSnapshot(colRef, (snapshot) => {
               delete payload.id; // id is Firestore doc id
               // If item has an id, update; otherwise add
               if (item.id) {
-                  const docRef = doc(db, "implantacoes", item.id);
+                  const docRef = doc(db, "implantacoesnew", item.id);
                   await updateDoc(docRef, payload);
               } else {
                   const added = await addDoc(implantacoesRef, payload);
@@ -2248,7 +2248,7 @@ onSnapshot(colRef, (snapshot) => {
   async function atualizarImplantacaoFirestore(id, payload) {
       try {
           payload.atualizadoEm = new Date().toISOString();
-          const docRef = doc(db, "implantacoes", id);
+          const docRef = doc(db, "implantacoesnew", id);
           await updateDoc(docRef, payload);
           console.log("✅ Implantação atualizada no Firestore:", id);
       } catch (err) {
@@ -2259,7 +2259,7 @@ onSnapshot(colRef, (snapshot) => {
 
   async function excluirImplantacaoFirestore(id) {
       try {
-          const docRef = doc(db, "implantacoes", id);
+          const docRef = doc(db, "implantacoesnew", id);
           await deleteDoc(docRef);
           console.log("🗑️ Implantação excluída do Firestore:", id);
       } catch (err) {
@@ -2736,7 +2736,7 @@ const firebaseConfig = {
 let firebaseInitialized = false;
 let firestoreCollectionRef = null;
 let isSyncingWithFirestore = false;
-const COLLECTION_NAME = "implantacoes"; // coleção usada no Firestore
+const COLLECTION_NAME = "implantacoesnew"; // coleção usada no Firestore
 
 function inicializarFirestoreSeConfigurado() {
     try {
@@ -2869,14 +2869,12 @@ function forcarSincronizacao() {
 
 
 <!-- ===== INTEGRAÇÃO FIRESTORE - V2 (substitui localStorage) ===== -->
-<!-- INSTRUÇÕES: Cole seu objeto firebaseConfig abaixo (remova o comentário) para ativar.
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script>
 (function(){
-  // --- COLE O firebaseConfig AQUI (remova os comentários) ---
     const firebaseConfig = {
       apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
       authDomain: "controle-agv.firebaseapp.com",
@@ -2887,7 +2885,7 @@ function forcarSincronizacao() {
     };
 
   // Não colocar chaves em chats públicos. Cole apenas no arquivo local.
-  const COLLECTION_NAME = "implantacoes";
+  const COLLECTION_NAME = "implantacoesnew";
   let firebaseInitialized = false;
   let auth = null;
   let db = null;
