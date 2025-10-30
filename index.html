@@ -2273,8 +2273,8 @@ onSnapshot(colRef, (snapshot) => {
       await salvarOuAtualizarTodos();
   };
 
-  // Substitui inicializarSistemaCloud para conectar ao Firestore
-  window.inicializarSistemaCloud = function() {
+  // Substitui inicializarSistemaLocal para conectar ao Firestore
+  window.inicializarSistemaLocal = function() {
       console.log("🌐 inicializarSistemaCloud() -> iniciando sincronização Firestore");
       window.sistemaInicializado = true;
       iniciarSincronizacaoFirestore();
@@ -2363,7 +2363,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (typeof ocultarModalLogin === 'function') ocultarModalLogin();
             } catch (e) {}
             try {
-                if (typeof inicializarSistemaCloud === 'function') inicializarSistemaCloud();
+                if (typeof inicializarSistemaLocal === 'function') inicializarSistemaCloud();
             } catch (e) {}
             try {
                 if (typeof renderizarImplantacoesPaginadas === 'function') renderizarImplantacoesPaginadas();
@@ -2703,9 +2703,9 @@ salvarDadosLocais = function() {
     renderizarImplantacoesPaginado();
 };
 
-const inicializarSistemaCloudOriginal = inicializarSistemaCloud;
-inicializarSistemaCloud = function() {
-    inicializarSistemaCloudOriginal();
+const inicializarSistemaLocalOriginal = inicializarSistemaLocal;
+inicializarSistemaLocal = function() {
+    inicializarSistemaLocalOriginal();
     renderizarImplantacoesPaginado();
 };
 </script>
@@ -2825,10 +2825,10 @@ if (typeof salvarDadosLocais === 'function') {
 }
 
 // Forçar carregar do Firestore ao inicializar sistema local se disponível
-if (typeof inicializarSistemaCloud === 'function') {
-    const originalInit = inicializarSistemaCloud;
-    window.inicializarSistemaCloudOriginal = originalInit;
-    inicializarSistemaCloud = function() {
+if (typeof inicializarSistemaLocal === 'function') {
+    const originalInit = inicializarSistemaLocal;
+    window.inicializarSistemaLocalOriginal = originalInit;
+    inicializarSistemaLocal = function() {
         originalInit();
         try { inicializarFirestoreSeConfigurado(); } catch(e){}
         if (firebaseInitialized && firestoreCollectionRef) {
@@ -2853,7 +2853,7 @@ if (typeof inicializarSistemaCloud === 'function') {
         }
     };
 } else {
-    console.warn('⚠️ inicializarSistemaCloud não encontrado.');
+    console.warn('⚠️ inicializarSistemaLocal não encontrado.');
 }
 
 // Utilitário para forçar sincronização manualmente (útil para admin/debug)
@@ -2950,16 +2950,16 @@ function forcarSincronizacao() {
   }
 
   // Override initialization to use Firebase-only
-  if (typeof window.inicializarSistemaCloud === 'function') {
-    const origInit = window.inicializarSistemaCloud;
-    window.inicializarSistemaCloud = function() {
+  if (typeof window.inicializarSistemaLocal === 'function') {
+    const origInit = window.inicializarSistemaLocal;
+    window.inicializarSistemaLocal = function() {
       // do not call original local storage initialization
       initFirebase();
       // originalInit intentionally not called to avoid localStorage usage
       console.log('initialization replaced: running Firebase-only mode');
     };
   } else {
-    window.inicializarSistemaCloud = function() { initFirebase(); };
+    window.inicializarSistemaLocal = function() { initFirebase(); };
   }
 
   // Disable local save function if present
