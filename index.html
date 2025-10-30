@@ -21,6 +21,8 @@ import { getFirestore, collection, onSnapshot, setDoc, doc } from "https://www.g
 
 const app = initializeApp(firebaseConfig);
 window.db = getFirestore(app);
+window.setDoc = setDoc;
+window.doc = doc;
 
 console.log("🔥 Firestore conectado com sucesso");
 </script>
