@@ -21,6 +21,9 @@ import { getFirestore, collection, onSnapshot, setDoc, doc } from "https://www.g
 
 const app = initializeApp(firebaseConfig);
 window.db = getFirestore(app);
+window.collection = collection;
+window.setDoc = setDoc;
+window.doc = doc;
 window.setDoc = setDoc;
 window.doc = doc;
 
@@ -1017,7 +1020,7 @@ onSnapshot(colRef, (snapshot) => {
                     console.log('✅ Dados processados:', dadosExcel.length, 'registros');
                     console.log('📄 Exemplo do primeiro registro:', dadosExcel[0]);
                     
-                    if (dadosExcel.length === 0) {
+                    if (!Array.isArray(dadosExcel) || dadosExcel.length === 0) {
                         mostrarNotificacao('❌ Nenhum dado válido encontrado no arquivo Excel', 'error');
                         return;
                     }
@@ -1111,7 +1114,7 @@ onSnapshot(colRef, (snapshot) => {
             const dadosPreview = document.getElementById('dadosPreview');
             const estatisticasPreview = document.getElementById('estatisticasPreview');
             
-            if (dadosExcel.length === 0) {
+            if (!Array.isArray(dadosExcel) || dadosExcel.length === 0) {
                 previewContainer.classList.add('hidden');
                 return;
             }
@@ -1187,7 +1190,7 @@ onSnapshot(colRef, (snapshot) => {
                 return;
             }
 
-            if (dadosExcel.length === 0) {
+            if (!Array.isArray(dadosExcel) || dadosExcel.length === 0) {
                 mostrarNotificacao('❌ Nenhum dado para importar', 'error');
                 return;
             }
