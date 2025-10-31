@@ -5,14 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Controle de Implantações - Sistema AGV</title>
   <script src="https://cdn.tailwindcss.com"></script><!-- SheetJS para leitura de Excel -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><!-- Sistema Local Inicializado -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><!-- Sistema Inicializado -->
   <script>
-        console.log('💾 Sistema Local AGV inicializado');
-        
-        // Sinalizar que sistema local está pronto
-        window.sistemaLocalReady = true;
-        window.sistemaLocalConnected = true;
-        
+        console.log('💾 Sistema AGV inicializado');
+       
         // Disparar evento customizado
         window.dispatchEvent(new CustomEvent('sistemaLocalReady', { 
             detail: { 
@@ -22,7 +18,7 @@
             }
         }));
         
-        console.log('✅ Sistema Local pronto para uso');
+        console.log('✅ Sistema pronto para uso');
     </script>
   <style>
         body {
@@ -137,7 +133,7 @@
      </div>
      <div class="mt-4 flex items-center text-green-400 text-sm">
       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-      </svg><span>Sistema Local Ativo 💾</span>
+      </svg><span>Sistema Ativo 💾</span>
      </div>
     </div><!-- Em Produção -->
     <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
@@ -265,12 +261,45 @@
      </div>
     </div>
    </div>
-  </div><!-- Footer -->
+  </div>
+  
+      <!-- Firebase + App logic (module) -->
+    <script type="module">
+    // --- FIREBASE SETUP ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      doc,
+      setDoc,
+      deleteDoc,
+      addDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
+      authDomain: "controle-agv.firebaseapp.com",
+      projectId: "controle-agv",
+      storageBucket: "controle-agv.firebasestorage.app",
+      messagingSenderId: "220840335975",
+      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
+    };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+window.db = db; // ✅ agora o restante do código consegue acessar
+const COLLECTION_NAME = "implantacoes";
+console.log("🔥 Firebase inicializado com sucesso");
+</script>
+
+<!-- Footer -->
+<footer class="bg-black/20 backdrop-blur-md border-t border-white/20 mt-16">
   <footer class="bg-black/20 backdrop-blur-md border-t border-white/20 mt-16">
    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="text-center">
-     <p class="text-white">© 2024 Equipe Agentes Virtuais. Sistema de Gestão AGV.</p>
-     <p class="mt-2 text-white/60 text-sm">Desenvolvido por Évelim Esquetini | Sistema Local 💾</p>
+     <p class="text-white">© 2025 Equipe Agentes Virtuais. Sistema de Gestão AGV.</p>
+     <p class="mt-2 text-white/60 text-sm">Desenvolvido por Évelim Esquetini</p>
     </div>
    </div>
   </footer>
@@ -293,7 +322,7 @@
             '39540020867'
         ];
 
-        // Sistema Local
+        // Sistema 
         let implantacoes = [];
         let sistemaInicializado = false;
         let sistemaLocalReady = true;
@@ -323,10 +352,10 @@
                 mostrarModalLogin();
             }
 
-            // Inicializar sistema local
+            // Inicializar sistema
             if (!sistemaInicializado) {
-                console.log('💾 Inicializando sistema local...');
-                inicializarSistemaLocal();
+                console.log('💾 Inicializando sistema...');
+                inicializarSistemaFirebase();
             }
 
             // Configurar máscara de CPF
@@ -352,40 +381,29 @@
             }
         });
 
-        function inicializarSistemaLocal() {
-            console.log('💾 Inicializando sistema local...');
-            
-            try {
-                // Carregar dados do localStorage
-                const dadosSalvos = localStorage.getItem('implantacoes_agv');
-                if (dadosSalvos) {
-                    implantacoes = JSON.parse(dadosSalvos);
-                    console.log(`✅ ${implantacoes.length} implantações carregadas do localStorage`);
-                } else {
-                    console.log('📝 Nenhuma implantação encontrada no localStorage');
-                    implantacoes = [];
-                }
-                
-                sistemaInicializado = true;
-                renderizarImplantacoes();
-                atualizarEstatisticas();
-                
-                console.log('✅ Sistema local inicializado com sucesso');
-            } catch (error) {
-                console.error('❌ Erro ao inicializar sistema local:', error);
-                mostrarNotificacao('❌ Erro ao carregar dados locais', 'error');
-            }
-        }
+     async function inicializarSistemaFirebase() {
+  try {
+    const colRef = collection(window.db, "implantacoes");
+    onSnapshot(colRef, (snapshot) => {
+      implantacoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderizarImplantacoes();
+      atualizarEstatisticas();
+      console.log(`🔥 ${implantacoes.length} implantações sincronizadas em tempo real`);
+    });
+  } catch (error) {
+    console.error("❌ Erro ao inicializar Firestore:", error);
+  }
+}
 
-        function salvarDadosLocais() {
-            try {
-                localStorage.setItem('implantacoes_agv', JSON.stringify(implantacoes));
-                console.log('💾 Dados salvos no localStorage');
-            } catch (error) {
-                console.error('❌ Erro ao salvar dados locais:', error);
-                mostrarNotificacao('❌ Erro ao salvar dados localmente', 'error');
-            }
-        }
+async function salvarDadosFirebase(implantacao) {
+  try {
+    const colRef = collection(window.db, "implantacoes");
+    await addDoc(colRef, implantacao);
+    console.log("✅ Implantação salva no Firebase");
+  } catch (error) {
+    console.error("❌ Erro ao salvar no Firebase:", error);
+  }
+}
 
         function mostrarModalLogin() {
             const modal = document.getElementById('modalLogin');
@@ -809,7 +827,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-2xl font-bold text-white">📊 Importar Planilha Excel</h2>
-                                <p class="text-blue-100 mt-1">Importação em massa para sistema local</p>
+                                <p class="text-blue-100 mt-1">Importação em massa para sistema</p>
                             </div>
                             <button onclick="fecharModalImportacao()" class="text-white hover:text-gray-200 transition-colors">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1205,14 +1223,14 @@
                 return;
             }
 
-            // Verificar se sistema local está pronto
+            // Verificar se sistema está pronto
             if (!sistemaLocalReady) {
-                console.error('❌ Sistema local não inicializado');
-                mostrarNotificacao('❌ Sistema local não inicializado. Recarregue a página.', 'error');
+                console.error('❌ Sistema não inicializado');
+                mostrarNotificacao('❌ Sistema não inicializado. Recarregue a página.', 'error');
                 return;
             }
 
-            console.log('✅ Sistema local verificado e pronto para importação');
+            console.log('✅ Sistema verificado e pronto para importação');
 
             const btnImportar = document.getElementById('btnImportarExcel');
             const progressoContainer = document.getElementById('progressoImportacao');
@@ -1229,7 +1247,7 @@
             const total = dadosExcel.length;
 
             try {
-                console.log(`🚀 Iniciando importação de ${total} registros para sistema local...`);
+                console.log(`🚀 Iniciando importação de ${total} registros para sistema...`);
                 textoProgresso.textContent = `Iniciando importação de ${total} registros...`;
                 barraProgresso.style.width = '0%';
 
@@ -1288,8 +1306,8 @@
 
                         console.log(`💾 Salvando localmente registro ${i + 1}:`, implantacao);
 
-                        // Salvar no sistema local
-                        implantacoes.push(implantacao);
+                        // Salvar no sistema
+                       await salvarDadosFirebase(implantacao);
                         
                         sucessos++;
                         console.log(`🎉 Registro ${i + 1} salvo com sucesso localmente!`);
@@ -1330,7 +1348,7 @@
                 // Salvar todos os dados no localStorage após importação
                 if (sucessos > 0) {
                     console.log('💾 Salvando dados no localStorage...');
-                    salvarDadosLocais();
+                    salvarDadosFirebase(implantacao);
                     renderizarImplantacoes();
                     atualizarEstatisticas();
                 }
@@ -1752,16 +1770,16 @@
             submitBtn.innerHTML = '<div class="loading mr-2"></div>Salvando no Firebase...';
 
             try {
-                // Verificar se sistema local está disponível
+                // Verificar se sistema está disponível
                 if (!sistemaLocalReady) {
-                    throw new Error('Sistema local não inicializado');
+                    throw new Error('Sistema não inicializado');
                 }
 
-                console.log('💾 Iniciando salvamento local...', novaImplantacao);
+                console.log('💾 Iniciando salvamento...', novaImplantacao);
                 
-                // Salvar no sistema local
-                implantacoes.push(novaImplantacao);
-                salvarDadosLocais();
+                // Salvar no sistema
+                await salvarDadosFirebase(implantacao);
+                salvarDadosFirebase(implantacao);
                 renderizarImplantacoes();
                 atualizarEstatisticas();
                 
