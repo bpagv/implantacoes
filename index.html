@@ -133,7 +133,7 @@
      </div>
      <div class="mt-4 flex items-center text-green-400 text-sm">
       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-      </svg><span>Sistema Ativo 💾</span>
+      </svg><span>Sistema Local Ativo 💾</span>
      </div>
     </div><!-- Em Produção -->
     <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
@@ -289,17 +289,35 @@
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 window.db = db; // ✅ agora o restante do código consegue acessar
+// === FUNÇÕES FIREBASE GLOBAIS ===
+window.salvarDadosFirebase = async function(implantacao) {
+  try {
+    const colRef = collection(window.db, "implantacoes");
+    await addDoc(colRef, implantacao);
+    console.log("✅ Salvo no Firebase:", implantacao);
+  } catch (error) {
+    console.error("❌ Erro ao salvar no Firebase:", error);
+  }
+}
+
+window.inicializarSistemaFirebase = function() {
+  const colRef = collection(window.db, "implantacoes");
+  onSnapshot(colRef, (snapshot) => {
+    implantacoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderizarImplantacoes();
+    atualizarEstatisticas();
+  });
+}     
 const COLLECTION_NAME = "implantacoes";
 console.log("🔥 Firebase inicializado com sucesso");
 </script>
 
 <!-- Footer -->
-<footer class="bg-black/20 backdrop-blur-md border-t border-white/20 mt-16">
   <footer class="bg-black/20 backdrop-blur-md border-t border-white/20 mt-16">
    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="text-center">
-     <p class="text-white">© 2025 Equipe Agentes Virtuais. Sistema de Gestão AGV.</p>
-     <p class="mt-2 text-white/60 text-sm">Desenvolvido por Évelim Esquetini</p>
+     <p class="text-white">© 2024 Equipe Agentes Virtuais. Sistema de Gestão AGV.</p>
+     <p class="mt-2 text-white/60 text-sm">Desenvolvido por Évelim Esquetini | Sistema Local 💾</p>
     </div>
    </div>
   </footer>
@@ -322,7 +340,7 @@ console.log("🔥 Firebase inicializado com sucesso");
             '39540020867'
         ];
 
-        // Sistema 
+        // Sistema Local
         let implantacoes = [];
         let sistemaInicializado = false;
         let sistemaLocalReady = true;
@@ -352,9 +370,9 @@ console.log("🔥 Firebase inicializado com sucesso");
                 mostrarModalLogin();
             }
 
-            // Inicializar sistema
+            // Inicializar sistema local
             if (!sistemaInicializado) {
-                console.log('💾 Inicializando sistema...');
+                console.log('💾 Inicializando sistema local...');
                 inicializarSistemaFirebase();
             }
 
@@ -381,7 +399,7 @@ console.log("🔥 Firebase inicializado com sucesso");
             }
         });
 
-     async function inicializarSistemaFirebase() {
+async function inicializarSistemaFirebase() {
   try {
     const colRef = collection(window.db, "implantacoes");
     onSnapshot(colRef, (snapshot) => {
@@ -392,16 +410,6 @@ console.log("🔥 Firebase inicializado com sucesso");
     });
   } catch (error) {
     console.error("❌ Erro ao inicializar Firestore:", error);
-  }
-}
-
-async function salvarDadosFirebase(implantacao) {
-  try {
-    const colRef = collection(window.db, "implantacoes");
-    await addDoc(colRef, implantacao);
-    console.log("✅ Implantação salva no Firebase");
-  } catch (error) {
-    console.error("❌ Erro ao salvar no Firebase:", error);
   }
 }
 
@@ -827,7 +835,7 @@ async function salvarDadosFirebase(implantacao) {
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-2xl font-bold text-white">📊 Importar Planilha Excel</h2>
-                                <p class="text-blue-100 mt-1">Importação em massa para sistema</p>
+                                <p class="text-blue-100 mt-1">Importação em massa para sistema local</p>
                             </div>
                             <button onclick="fecharModalImportacao()" class="text-white hover:text-gray-200 transition-colors">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1212,25 +1220,72 @@ async function salvarDadosFirebase(implantacao) {
             previewContainer.classList.remove('hidden');
         }
 
-        async function processarImportacao() {
-            if (!permissoes.podeIncluir) {
-                mostrarNotificacao('❌ Você não tem permissão para importar dados', 'error');
-                return;
-            }
+async function processarImportacao() {
+  if (!dadosExcel || dadosExcel.length === 0) {
+    alert('Nenhum dado para importar');
+    return;
+  }
+
+  const total = dadosExcel.length;
+  let sucessos = 0, erros = 0;
+
+  for (let i = 0; i < dadosExcel.length; i++) {
+    try {
+      const item = dadosExcel[i];
+
+      // 🔧 Cria o objeto corretamente
+      const implantacao = {
+        criadoEm: new Date().toISOString(),
+        status: (item['Status'] || item['status'] || 'andamento').toString().toLowerCase(),
+        chamado: item['Chamado'] || item['chamado'] || `AUTO-${Date.now()}-${i}`,
+        campanha: item['Campanha'] || item['campanha'] || '',
+        fornecedor: item['Fornecedor'] || item['fornecedor'] || 'Não informado',
+        carteira: item['Carteira'] || item['carteira'] || '',
+        tipoAgv: item['Tipo AGV'] || item['Tipo'] || item['tipo'] || '',
+        dataSolicitacao: converterDataParaISO(item['Data Solicitação'] || item['DataSolicitação'] || item['dataSolicitacao'] || item['data_solicitacao']),
+        dataEntrega: converterDataParaISO(item['Data Entrega'] || item['DataEntrega'] || item['dataEntrega'] || item['data_entrega']),
+        licencas: parseInt(item['Licenças'] || item['Licencas'] || 0) || 0,
+        observacoes: item['Observações'] || item['Obs'] || item['observacoes'] || ''
+      };
+
+      // ✅ Salva direto no Firebase
+      if (typeof window.salvarDadosFirebase === 'function') {
+        const ok = await window.salvarDadosFirebase(implantacao);
+        if (ok) sucessos++;
+        else erros++;
+      } else {
+        console.error('Função salvarDadosFirebase não encontrada');
+        erros++;
+      }
+    } catch (err) {
+      console.error('Erro ao processar registro', i, err);
+      erros++;
+    }
+  }
+
+  alert(`Concluído: ${total} registros (Sucesso: ${sucessos}, Erros: ${erros})`);
+
+  // Atualiza lista automaticamente
+  if (typeof window.inicializarSistemaFirebase === 'function') {
+    window.inicializarSistemaFirebase();
+  }
+
+  fecharModalImportacao();
+}
 
             if (dadosExcel.length === 0) {
                 mostrarNotificacao('❌ Nenhum dado para importar', 'error');
                 return;
             }
 
-            // Verificar se sistema está pronto
+            // Verificar se sistema local está pronto
             if (!sistemaLocalReady) {
-                console.error('❌ Sistema não inicializado');
-                mostrarNotificacao('❌ Sistema não inicializado. Recarregue a página.', 'error');
+                console.error('❌ Sistema local não inicializado');
+                mostrarNotificacao('❌ Sistema local não inicializado. Recarregue a página.', 'error');
                 return;
             }
 
-            console.log('✅ Sistema verificado e pronto para importação');
+            console.log('✅ Sistema local verificado e pronto para importação');
 
             const btnImportar = document.getElementById('btnImportarExcel');
             const progressoContainer = document.getElementById('progressoImportacao');
@@ -1247,7 +1302,7 @@ async function salvarDadosFirebase(implantacao) {
             const total = dadosExcel.length;
 
             try {
-                console.log(`🚀 Iniciando importação de ${total} registros para sistema...`);
+                console.log(`🚀 Iniciando importação de ${total} registros para sistema local...`);
                 textoProgresso.textContent = `Iniciando importação de ${total} registros...`;
                 barraProgresso.style.width = '0%';
 
@@ -1306,8 +1361,8 @@ async function salvarDadosFirebase(implantacao) {
 
                         console.log(`💾 Salvando localmente registro ${i + 1}:`, implantacao);
 
-                        // Salvar no sistema
-                       await salvarDadosFirebase(implantacao);
+                        // Salvar no sistema local
+                        implantacoes.push(implantacao);
                         
                         sucessos++;
                         console.log(`🎉 Registro ${i + 1} salvo com sucesso localmente!`);
@@ -1770,16 +1825,16 @@ async function salvarDadosFirebase(implantacao) {
             submitBtn.innerHTML = '<div class="loading mr-2"></div>Salvando no Firebase...';
 
             try {
-                // Verificar se sistema está disponível
+                // Verificar se sistema local está disponível
                 if (!sistemaLocalReady) {
-                    throw new Error('Sistema não inicializado');
+                    throw new Error('Sistema local não inicializado');
                 }
 
-                console.log('💾 Iniciando salvamento...', novaImplantacao);
+                console.log('💾 Iniciando salvamento local...', novaImplantacao);
                 
-                // Salvar no sistema
-                await salvarDadosFirebase(implantacao);
-                salvarDadosFirebase(implantacao);
+                // Salvar no sistema local
+                implantacoes.push(novaImplantacao);
+                salvarDadosFirebase(novaImplantacao);
                 renderizarImplantacoes();
                 atualizarEstatisticas();
                 
