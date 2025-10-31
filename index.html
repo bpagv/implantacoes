@@ -6,29 +6,24 @@
   <title>Controle de Implantações - Sistema AGV</title>
   <script src="https://cdn.tailwindcss.com"></script><!-- SheetJS para leitura de Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><!-- Sistema Local Inicializado -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import { getFirestore, collection, onSnapshot, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
-      authDomain: "controle-agv.firebaseapp.com",
-      projectId: "controle-agv",
-      storageBucket: "controle-agv.firebasestorage.app",
-      messagingSenderId: "220840335975",
-      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
-    };
-
-const app = initializeApp(firebaseConfig);
-window.db = getFirestore(app);
-window.collection = collection;
-window.setDoc = setDoc;
-window.doc = doc;
-window.setDoc = setDoc;
-window.doc = doc;
-
-console.log("🔥 Firestore conectado com sucesso");
-</script>
+  <script>
+        console.log('💾 Sistema Local AGV inicializado');
+        
+        // Sinalizar que sistema local está pronto
+        window.sistemaLocalReady = true;
+        window.sistemaLocalConnected = true;
+        
+        // Disparar evento customizado
+        window.dispatchEvent(new CustomEvent('sistemaLocalReady', { 
+            detail: { 
+                status: 'connected',
+                storage: 'localStorage',
+                timestamp: new Date().toISOString()
+            }
+        }));
+        
+        console.log('✅ Sistema Local pronto para uso');
+    </script>
   <style>
         body {
             box-sizing: border-box;
@@ -142,7 +137,7 @@ console.log("🔥 Firestore conectado com sucesso");
      </div>
      <div class="mt-4 flex items-center text-green-400 text-sm">
       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-      </svg><span>Sistema Cloud Ativo 💾</span>
+      </svg><span>Sistema Local Ativo 💾</span>
      </div>
     </div><!-- Em Produção -->
     <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 card-hover">
@@ -207,7 +202,7 @@ console.log("🔥 Firestore conectado com sucesso");
      </div>
      <div class="mt-4 flex items-center text-purple-400 text-sm">
       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
-      </svg><span>Dados Cloud 💾</span>
+      </svg><span>Dados Locais 💾</span>
      </div>
     </div>
    </div><!-- Filtros e Busca -->
@@ -230,11 +225,17 @@ console.log("🔥 Firestore conectado com sucesso");
       <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
       </svg>
      </div>
-     <h3 class="text-xl font-bold text-white mb-2">Carregando dados...</h3>
-     <p class="text-white/80">Inicializando sistema de armazenamento cloud 💾</p>
+     <h3 class="text-xl font-bold text-white mb-2">Carregando dados locais...</h3>
+     <p class="text-white/80">Inicializando sistema de armazenamento local 💾</p>
     </div>
    </div><!-- Paginação -->
-   <div class="flex justify-center items-center space-x-4 mt-12">
+   <div class="flex justify-center items-center space-x-4 mt-12"><button class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors">
+     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+     </svg></button>
+    <div class="flex space-x-2"><button class="bg-indigo-600 px-4 py-2 rounded-lg text-white font-medium">1</button> <button class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors">2</button> <button class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors">3</button>
+    </div><button class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors">
+     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+     </svg></button>
    </div>
   </main><!-- Modal de Login -->
   <div id="modalLogin" class="modal fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -268,8 +269,8 @@ console.log("🔥 Firestore conectado com sucesso");
   <footer class="bg-black/20 backdrop-blur-md border-t border-white/20 mt-16">
    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="text-center">
-     <p class="text-white">© 2025 Equipe Agentes Virtuais. Sistema de Gestão AGV.</p>
-     <p class="mt-2 text-white/60 text-sm">Desenvolvido por Évelim Esquetini</p>
+     <p class="text-white">© 2024 Equipe Agentes Virtuais. Sistema de Gestão AGV.</p>
+     <p class="mt-2 text-white/60 text-sm">Desenvolvido por Évelim Esquetini | Sistema Local 💾</p>
     </div>
    </div>
   </footer>
@@ -295,6 +296,7 @@ console.log("🔥 Firestore conectado com sucesso");
         // Sistema Local
         let implantacoes = [];
         let sistemaInicializado = false;
+        let sistemaLocalReady = true;
 
         function voltarMenu() {
             window.location.href = '../index.html';
@@ -303,8 +305,7 @@ console.log("🔥 Firestore conectado com sucesso");
         // Inicialização
         document.addEventListener('DOMContentLoaded', async function() {
             // Verificar se já está logado
-           const cpfSalvo = null; // Não usamos localStorage
-            mostrarModalLogin();
+            const cpfSalvo = localStorage.getItem('cpfUsuario');
             if (cpfSalvo) {
                 // Verificar se é administrador
                 if (cpfsAdministradores.includes(cpfSalvo)) {
@@ -324,8 +325,8 @@ console.log("🔥 Firestore conectado com sucesso");
 
             // Inicializar sistema local
             if (!sistemaInicializado) {
-                console.log('💾 Inicializando sistema...');
-                inicializarSistemaCloud();
+                console.log('💾 Inicializando sistema local...');
+                inicializarSistemaLocal();
             }
 
             // Configurar máscara de CPF
@@ -351,34 +352,40 @@ console.log("🔥 Firestore conectado com sucesso");
             }
         });
 
-async function inicializarSistemaCloud() {
-  try {
-    console.log("🔥 Conectando ao Firestore...");
-    const colRef = collection(window.db, "implantacoesnew");
+        function inicializarSistemaLocal() {
+            console.log('💾 Inicializando sistema local...');
+            
+            try {
+                // Carregar dados do localStorage
+                const dadosSalvos = localStorage.getItem('implantacoes_agv');
+                if (dadosSalvos) {
+                    implantacoes = JSON.parse(dadosSalvos);
+                    console.log(`✅ ${implantacoes.length} implantações carregadas do localStorage`);
+                } else {
+                    console.log('📝 Nenhuma implantação encontrada no localStorage');
+                    implantacoes = [];
+                }
+                
+                sistemaInicializado = true;
+                renderizarImplantacoes();
+                atualizarEstatisticas();
+                
+                console.log('✅ Sistema local inicializado com sucesso');
+            } catch (error) {
+                console.error('❌ Erro ao inicializar sistema local:', error);
+                mostrarNotificacao('❌ Erro ao carregar dados locais', 'error');
+            }
+        }
 
-onSnapshot(colRef, (snapshot) => {
-  implantacoes = [];
-  snapshot.forEach((doc) => implantacoes.push(doc.data()));
-  console.log(`📡 ${implantacoes.length} registros recebidos`);
-  if (typeof renderizarImplantacoes === 'function') renderizarImplantacoes();
-  if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
-});
-  } catch (error) {
-    console.error("❌ Erro ao conectar com Firestore:", error);
-  }
-}
-
-	async function salvarDadosLocais() {
-	  try {
-	    for (const impl of implantacoes) {
-	      const ref = doc(window.db, "implantacoesnew", impl.id);
-	      await setDoc(ref, impl, { merge: true });
-	    }
-    console.log('💾 Dados salvos no Firestore com sucesso');
-  } catch (error) {
-    console.error('❌ Erro ao salvar no Firestore:', error);
-  }
-}
+        function salvarDadosLocais() {
+            try {
+                localStorage.setItem('implantacoes_agv', JSON.stringify(implantacoes));
+                console.log('💾 Dados salvos no localStorage');
+            } catch (error) {
+                console.error('❌ Erro ao salvar dados locais:', error);
+                mostrarNotificacao('❌ Erro ao salvar dados localmente', 'error');
+            }
+        }
 
         function mostrarModalLogin() {
             const modal = document.getElementById('modalLogin');
@@ -401,12 +408,14 @@ onSnapshot(colRef, (snapshot) => {
             if (cpfsAdministradores.includes(cpf)) {
                 usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpf };
                 await fazerLogin(cpf);
+                localStorage.setItem('cpfUsuario', cpf);
                 ocultarModalLogin();
                 console.log('Login realizado como Administrador');
             } else if (cpf.length === 11 && /^\d+$/.test(cpf)) {
                 // Qualquer CPF válido (11 dígitos) tem acesso de visualização
                 usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpf };
                 await fazerLogin(cpf);
+                localStorage.setItem('cpfUsuario', cpf);
                 ocultarModalLogin();
                 console.log('Login realizado como Usuário');
             } else {
@@ -478,6 +487,7 @@ onSnapshot(colRef, (snapshot) => {
         }
 
         function logout() {
+            localStorage.removeItem('cpfUsuario');
             usuarioAtual = null;
             permissoes = { podeVer: false, podeEditar: false, podeExcluir: false, podeIncluir: false };
             location.reload();
@@ -870,7 +880,7 @@ onSnapshot(colRef, (snapshot) => {
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                                 </svg>
-                                <span>Importar</span>
+                                <span>Importar Localmente</span>
                             </button>
                         </div>
                     </div>
@@ -1020,7 +1030,7 @@ onSnapshot(colRef, (snapshot) => {
                     console.log('✅ Dados processados:', dadosExcel.length, 'registros');
                     console.log('📄 Exemplo do primeiro registro:', dadosExcel[0]);
                     
-                    if (!Array.isArray(dadosExcel) || dadosExcel.length === 0) {
+                    if (dadosExcel.length === 0) {
                         mostrarNotificacao('❌ Nenhum dado válido encontrado no arquivo Excel', 'error');
                         return;
                     }
@@ -1114,7 +1124,7 @@ onSnapshot(colRef, (snapshot) => {
             const dadosPreview = document.getElementById('dadosPreview');
             const estatisticasPreview = document.getElementById('estatisticasPreview');
             
-            if (!Array.isArray(dadosExcel) || dadosExcel.length === 0) {
+            if (dadosExcel.length === 0) {
                 previewContainer.classList.add('hidden');
                 return;
             }
@@ -1190,8 +1200,15 @@ onSnapshot(colRef, (snapshot) => {
                 return;
             }
 
-            if (!Array.isArray(dadosExcel) || dadosExcel.length === 0) {
+            if (dadosExcel.length === 0) {
                 mostrarNotificacao('❌ Nenhum dado para importar', 'error');
+                return;
+            }
+
+            // Verificar se sistema local está pronto
+            if (!sistemaLocalReady) {
+                console.error('❌ Sistema local não inicializado');
+                mostrarNotificacao('❌ Sistema local não inicializado. Recarregue a página.', 'error');
                 return;
             }
 
@@ -1269,20 +1286,18 @@ onSnapshot(colRef, (snapshot) => {
                             origemImportacao: 'excel'
                         };
 
-                        console.log(`💾 Salvando registro ${i + 1}:`, implantacao);
+                        console.log(`💾 Salvando localmente registro ${i + 1}:`, implantacao);
 
-// Salvar no sistema local
-implantacoes.push(implantacao);
-
-try {
-  await setDoc(
-    doc(window.db, "implantacoesnew", registro.id),
-    registro
-  );
-} catch (error) {
-  console.error(`❌ Erro ao importar registro ${i + 1}:`, error, registro);
-  erros++;
-}                      
+                        // Salvar no sistema local
+                        implantacoes.push(implantacao);
+                        
+                        sucessos++;
+                        console.log(`🎉 Registro ${i + 1} salvo com sucesso localmente!`);
+                        
+                    } catch (error) {
+                        console.error(`❌ Erro ao importar registro ${i + 1}:`, error, item);
+                        erros++;
+                        
                         // Log detalhado do erro
                         const motivoErro = error.message || error.code || 'Erro desconhecido';
                         console.error(`📝 Detalhes do erro no registro ${i + 1}:`, {
@@ -1314,7 +1329,7 @@ try {
 
                 // Salvar todos os dados no localStorage após importação
                 if (sucessos > 0) {
-                    console.log('💾 Salvando dados...');
+                    console.log('💾 Salvando dados no localStorage...');
                     salvarDadosLocais();
                     renderizarImplantacoes();
                     atualizarEstatisticas();
@@ -1333,8 +1348,8 @@ try {
                 
                 if (sucessos > 0) {
                     const mensagemSucesso = erros > 0 
-                        ? `💾 Importação concluída! ${sucessos} registros salvos. ${erros} registros com erro - verifique o console para detalhes.`
-                        : `💾 Importação 100% concluída! ${sucessos} registros salvos com sucesso!`;
+                        ? `💾 Importação concluída! ${sucessos} registros salvos localmente. ${erros} registros com erro - verifique o console para detalhes.`
+                        : `💾 Importação 100% concluída! ${sucessos} registros salvos localmente com sucesso!`;
                     
                     mostrarNotificacao(mensagemSucesso, erros > 0 ? 'warning' : 'success');
                     
@@ -1737,7 +1752,12 @@ try {
             submitBtn.innerHTML = '<div class="loading mr-2"></div>Salvando no Firebase...';
 
             try {
-                console.log('💾 Iniciando salvamento...', novaImplantacao);
+                // Verificar se sistema local está disponível
+                if (!sistemaLocalReady) {
+                    throw new Error('Sistema local não inicializado');
+                }
+
+                console.log('💾 Iniciando salvamento local...', novaImplantacao);
                 
                 // Salvar no sistema local
                 implantacoes.push(novaImplantacao);
@@ -1745,11 +1765,11 @@ try {
                 renderizarImplantacoes();
                 atualizarEstatisticas();
                 
-                console.log('✅ Nova implantação salva com sucesso!');
-                mostrarNotificacao('💾 Nova implantação salva com sucesso!', 'success');
+                console.log('✅ Nova implantação salva localmente com sucesso!');
+                mostrarNotificacao('💾 Nova implantação salva localmente com sucesso!', 'success');
                 fecharModal();
             } catch (error) {
-                console.error('❌ Erro detalhado ao salvar:', {
+                console.error('❌ Erro detalhado ao salvar localmente:', {
                     erro: error,
                     message: error.message,
                     stack: error.stack,
@@ -1757,7 +1777,7 @@ try {
                 });
                 
                 const mensagemErro = error.message || 'Erro desconhecido ao salvar';
-                mostrarNotificacao(`❌ Erro ao salvar: ${mensagemErro}`, 'error');
+                mostrarNotificacao(`❌ Erro ao salvar localmente: ${mensagemErro}`, 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -2159,920 +2179,5 @@ try {
             }, 5000);
         }
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99202e32042c9a86',t:'MTc2MTA0MzY4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<!-- FIREBASE FIRESTORE (integração adicionada) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-      getFirestore,
-      collection,
-      onSnapshot,
-      addDoc,
-      doc,
-      updateDoc,
-      deleteDoc,
-      getDoc
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-  const firebaseConfig = {
-      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
-      authDomain: "controle-agv.firebaseapp.com",
-      projectId: "controle-agv",
-      storageBucket: "controle-agv.firebasestorage.app",
-      messagingSenderId: "220840335975",
-      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const implantacoesRef = collection(db, "implantacoesnew");
-
-  // Expor utilitários globalmente
-  window._firestore = { db, implantacoesRef };
-
-  // Carregamento em tempo real
-  function iniciarSincronizacaoFirestore() {
-      console.log("🌐 Conectando ao Firestore (coleção: implantacoes)...");
-      onSnapshot(implantacoesRef, (snapshot) => {
-          const lista = [];
-          snapshot.forEach(d => {
-              const data = d.data();
-              data.id = d.id;
-              lista.push(data);
-          });
-          // substituir o array global mantendo referência
-          window.implantacoes = lista.sort((a,b)=> (b.criadoEm||'').localeCompare(a.criadoEm||''));
-          console.log(`✅ ${lista.length} implantações sincronizadas do Firestore`);
-          if (typeof renderizarImplantacoes === "function") renderizarImplantacoes();
-          if (typeof atualizarEstatisticas === "function") atualizarEstatisticas();
-      }, (err)=>{
-          console.error("❌ Erro onSnapshot:", err);
-      });
-  }
-
-  async function salvarOuAtualizarTodos() {
-      if (!window.implantacoes || !Array.isArray(window.implantacoes)) return;
-      console.log("📡 Sincronizando itens locais para o Firestore...");
-
-      for (let i=0;i<window.implantacoes.length;i++) {
-          const item = window.implantacoes[i];
-          try {
-              // Remover propriedades transitórias que não queremos salvar, se existirem
-              const payload = Object.assign({}, item);
-              delete payload.id; // id is Firestore doc id
-              // If item has an id, update; otherwise add
-              if (item.id) {
-                  const docRef = doc(db, "implantacoesnew", item.id);
-                  await updateDoc(docRef, payload);
-              } else {
-                  const added = await addDoc(implantacoesRef, payload);
-                  // set the id back to local array for immediate reference
-                  item.id = added.id;
-              }
-          } catch (err) {
-              console.error("❌ Erro ao salvar/atualizar item no Firestore:", err, item);
-          }
-      }
-      console.log("✅ Sincronização concluída.");
-  }
-
-  // Funções usadas em botões/ações: adicionar, atualizar, excluir
-  async function adicionarImplantacaoFirestore(payload) {
-      try {
-          payload.criadoEm = new Date().toISOString();
-          payload.atualizadoEm = new Date().toISOString();
-          const added = await addDoc(implantacoesRef, payload);
-          console.log("✅ Implantação adicionada no Firestore:", added.id);
-          return added.id;
-      } catch (err) {
-          console.error("❌ Erro ao adicionar implantação:", err);
-          throw err;
-      }
-  }
-
-  async function atualizarImplantacaoFirestore(id, payload) {
-      try {
-          payload.atualizadoEm = new Date().toISOString();
-          const docRef = doc(db, "implantacoesnew", id);
-          await updateDoc(docRef, payload);
-          console.log("✅ Implantação atualizada no Firestore:", id);
-      } catch (err) {
-          console.error("❌ Erro ao atualizar implantação:", err);
-          throw err;
-      }
-  }
-
-  async function excluirImplantacaoFirestore(id) {
-      try {
-          const docRef = doc(db, "implantacoesnew", id);
-          await deleteDoc(docRef);
-          console.log("🗑️ Implantação excluída do Firestore:", id);
-      } catch (err) {
-          console.error("❌ Erro ao excluir implantação:", err);
-          throw err;
-      }
-  }
-
-  // === OVERRIDES GLOBAIS (mantêm layout/nomes originais, trocando apenas a persistência) ===
-  // Substitui salvarDadosLocais para sincronizar com Firestore
-  window.salvarDadosLocais = async function() {
-      console.warn("🔁 salvarDadosLocais() foi redirecionado para Firestore. Sincronizando...");
-      await salvarOuAtualizarTodos();
-  };
-
-  // Substitui inicializarSistemaLocal para conectar ao Firestore
-  window.inicializarSistemaLocal = function() {
-      console.log("🌐 inicializarSistemaCloud() -> iniciando sincronização Firestore");
-      window.sistemaInicializado = true;
-      iniciarSincronizacaoFirestore();
-  };
-
-  // Substitui exclusão global se existia função de mesmo nome
-  window.excluirImplantacao = async function(id) {
-      if (!id) {
-          console.error("Excluir chamado sem id");
-          return;
-      }
-      try {
-          await excluirImplantacaoFirestore(id);
-          // opcional: atualizar UI se necessário (onSnapshot cuidará disso)
-      } catch (err) {
-          mostrarNotificacao && mostrarNotificacao('Erro ao excluir no Firestore', 'error');
-      }
-  };
-
-  // Substitui salvar de edição/novo quando forem chamadas por nome
-  // Algumas partes do código chamam salvarEdicao / salvarNova... não sabemos todos os nomes,
-  // então expor funções convenientes que podem ser usadas no código existente:
-  window.salvarNovaImplantacao = async function(implantacao) {
-      return await adicionarImplantacaoFirestore(implantacao);
-  };
-
-  window.atualizarImplantacao = async function(id, dados) {
-      return await atualizarImplantacaoFirestore(id, dados);
-  };
-
-  // Se o código de importação chamar diretamente salvarDadosLocais após inserir na array,
-  // nossa sobrescrita salvarDadosLocais() que invoca salvarOuAtualizarTodos() cuidará da sincronização.
-  // Para maior compatibilidade, também interceptamos clicks no botão de importação para garantir
-  // que, após processar importação local, sincronize com Firestore.
-  document.addEventListener('click', function(e){
-      const el = e.target;
-      if (el && (el.id === 'btnImportarExcel' || el.closest && el.closest('#btnImportarExcel'))) {
-          // Esperar 200ms para que o processo original (que adiciona items a window.implantacoes) ocorra,
-          // então sincronizar para o Firestore.
-          setTimeout(()=>{
-              if (window.salvarDadosLocais) window.salvarDadosLocais();
-          }, 500);
-      }
-  });
-
-  // Iniciar automaticamente se o script carregar depois do DOM
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      if (!window.sistemaInicializado) {
-          window.inicializarSistemaCloud();
-      }
-  } else {
-      document.addEventListener('DOMContentLoaded', ()=>{
-          if (!window.sistemaInicializado) window.inicializarSistemaCloud();
-      });
-  }
-
-  // Expor para debugging
-  window._firestore_utils = {
-      iniciarSincronizacaoFirestore,
-      salvarOuAtualizarTodos,
-      adicionarImplantacaoFirestore,
-      atualizarImplantacaoFirestore,
-      excluirImplantacaoFirestore
-  };
-</script>
-
-
-<!-- UNIFICATED SCRIPT: Login, Import Hook, Paginação Dinâmica e integração -->
-<script>
-// --- Login robusto e inicialização ---
-document.addEventListener('DOMContentLoaded', async function() {
-    try {
-        const cpfInput = document.getElementById('cpfInput');
-        const formLogin = document.getElementById('formLogin');
-
-        // Função auxiliar para iniciar sistema local caso exista
-        async function iniciarPosLogin(cpf) {
-            try {
-                if (typeof fazerLogin === 'function') {
-                    await fazerLogin(cpf);
-                }
-            } catch (e) {
-                console.error('Erro em fazerLogin():', e);
-            }
-            try {
-                if (typeof ocultarModalLogin === 'function') ocultarModalLogin();
-            } catch (e) {}
-            try {
-                if (typeof inicializarSistemaLocal === 'function') inicializarSistemaCloud();
-            } catch (e) {}
-            try {
-                if (typeof renderizarImplantacoesPaginadas === 'function') renderizarImplantacoesPaginadas();
-            } catch (e) {}
-            try {
-                if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
-            } catch (e) {}
-        }
-
-        // Auto-login se CPF salvo
-                if (cpfSalvo && cpfSalvo.length === 11) {
-            // Reconstruir usuarioAtual caso necessário
-            if (typeof cpfsAdministradores !== 'undefined' && Array.isArray(cpfsAdministradores) && cpfsAdministradores.includes(cpfSalvo)) {
-                usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
-            } else {
-                usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
-            }
-            // Garantir permissões básicas conforme nível
-            if (usuarioAtual && usuarioAtual.nivel === 'admin') {
-                permissoes = { podeVer: true, podeEditar:true, podeExcluir:true, podeIncluir:true };
-            } else {
-                permissoes = { podeVer: true, podeEditar:false, podeExcluir:false, podeIncluir:false };
-            }
-            await iniciarPosLogin(cpfSalvo);
-        }
-
-        // Se existir formulário, configurar handler seguro
-        if (formLogin && cpfInput) {
-            // Máscara de CPF já pode existir; só garantir leitura limpa
-            formLogin.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const cpfLimpo = (cpfInput.value || '').replace(/\D/g, '');
-                if (!cpfLimpo || cpfLimpo.length !== 11) {
-                    if (typeof mostrarNotificacao === 'function') mostrarNotificacao('CPF inválido. Digite 11 dígitos.', 'error');
-                    return;
-                }
-
-                // Determinar nível
-                if (typeof cpfsAdministradores !== 'undefined' && Array.isArray(cpfsAdministradores) && cpfsAdministradores.includes(cpfLimpo)) {
-                    usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfLimpo };
-                    permissoes = { podeVer: true, podeEditar:true, podeExcluir:true, podeIncluir:true };
-                } else {
-                    usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfLimpo };
-                    permissoes = { podeVer: true, podeEditar:false, podeExcluir:false, podeIncluir:false };
-                }
-
-                try {
-                  //  localStorage.setItem('cpfUsuario', cpfLimpo);
-                } catch (err) {
-                    console.warn('Não foi possível salvar CPF no localStorage:', err);
-                }
-
-                await iniciarPosLogin(cpfLimpo);
-                if (typeof mostrarNotificacao === 'function') mostrarNotificacao('✅ Login realizado com sucesso!', 'success');
-            });
-        }
-    } catch (error) {
-        console.error('Erro ao inicializar login automático:', error);
-    }
-});
-
-// --- Paginação dinâmica e renderização (suporta tanto cards quanto tabela) ---
-let paginaAtual = 1;
-const itensPorPagina = 10;
-
-function obterTotalImplantacoes() {
-    if (Array.isArray(window.implantacoes)) return window.implantacoes.length;
-    if (Array.isArray(implantacoes)) return implantacoes.length;
-    return 0;
-}
-function obterImplantacoesArray() {
-    if (Array.isArray(window.implantacoes)) return window.implantacoes;
-    if (Array.isArray(implantacoes)) return implantacoes;
-    return [];
-}
-
-function renderizarImplantacoesPaginadas() {
-    const arr = obterImplantacoesArray();
-    const total = arr.length;
-    const inicio = (paginaAtual - 1) * itensPorPagina;
-    const fim = inicio + itensPorPagina;
-    const subset = arr.slice(inicio, fim);
-
-    // Preferência: se existir container de cards 'listaImplantacoes' usamos criarCardImplantacao
-    const containerCards = document.getElementById('listaImplantacoes');
-    const tabela = document.getElementById('tabela-implantacoes');
-
-    if (tabela) {
-        // modo tabela
-        tabela.innerHTML = '';
-        subset.forEach((item, idx) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="px-2 py-1 text-sm">${inicio + idx + 1}</td>
-                <td class="px-2 py-1 text-sm">${item.campanha || item.nome || ''}</td>
-                <td class="px-2 py-1 text-sm">${item.status || ''}</td>
-                <td class="px-2 py-1 text-sm">${item.dataSolicitacao || item.data || item.data_solicitacao || ''}</td>
-                <td class="px-2 py-1 text-sm">${item.fornecedor || item.responsavel || ''}</td>
-                <td class="px-2 py-1 text-sm"><button class="px-2 py-1 rounded bg-yellow-600 text-white" onclick="(typeof editarImplantacao==='function'?editarImplantacao('${'${item.id || ''}'}'):console.warn('editarImplantacao não implementado'))">Editar</button></td>
-            `;
-            tabela.appendChild(row);
-        });
-    } else if (containerCards) {
-        // modo cards (usando criarCardImplantacao se existir)
-        containerCards.innerHTML = '';
-        subset.forEach((item, idx) => {
-            try {
-                if (typeof criarCardImplantacao === 'function') {
-                    const card = criarCardImplantacao(item, inicio + idx);
-                    containerCards.appendChild(card);
-                } else {
-                    // fallback simples
-                    const div = document.createElement('div');
-                    div.className = 'bg-white/10 rounded p-4';
-                    div.innerHTML = `<h4 class="font-bold">${item.campanha || item.nome || ''}</h4><p>${item.fornecedor || ''}</p>`;
-                    containerCards.appendChild(div);
-                }
-            } catch (e) {
-                console.error('Erro ao criar card:', e);
-            }
-        });
-    } else {
-        // Se não existe nem tabela nem container, tentar inserir no console
-        console.warn('Nenhum container encontrado para renderizar implantações (tabela-implantacoes ou listaImplantacoes).');
-    }
-
-    atualizarBotoesPaginacao();
-}
-
-// Atualiza botões dinamicamente dentro do container #paginacao ou .paginacao
-function atualizarBotoesPaginacao() {
-    const totalPaginas = Math.max(1, Math.ceil(obterTotalImplantacoes() / itensPorPagina));
-    let paginador = document.getElementById('paginacao');
-    if (!paginador) paginador = document.querySelector('.paginacao');
-
-    if (!paginador) {
-        console.warn('Container de paginação não encontrado (id="paginacao" ou class="paginacao").');
-        return;
-    }
-
-    // limpar e construir
-    paginador.innerHTML = '';
-
-    // botão anterior
-    const btnPrev = document.createElement('button');
-    btnPrev.className = 'px-3 py-2 rounded mr-2 bg-white/10 hover:bg-white/20 text-white';
-    btnPrev.textContent = '◀';
-    btnPrev.onclick = () => {
-        if (paginaAtual > 1) { paginaAtual--; renderizarImplantacoesPaginadas(); }
-    };
-    paginador.appendChild(btnPrev);
-
-    // botões de página (limitar a um bloco visível grande, com elipses se necessário)
-    const maxVisiveis = 7;
-    let start = Math.max(1, paginaAtual - Math.floor(maxVisiveis/2));
-    let end = Math.min(totalPaginas, start + maxVisiveis - 1);
-    if (end - start + 1 < maxVisiveis) {
-        start = Math.max(1, end - maxVisiveis + 1);
-    }
-
-    if (start > 1) {
-        const btn = document.createElement('button');
-        btn.textContent = '1';
-        btn.className = paginaAtual===1 ? 'px-3 py-2 rounded bg-indigo-600 text-white mr-1' : 'px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-white mr-1';
-        btn.onclick = () => { paginaAtual = 1; renderizarImplantacoesPaginadas(); };
-        paginador.appendChild(btn);
-        if (start > 2) {
-            const span = document.createElement('span'); span.textContent = '...'; span.className='px-2 text-white/70'; paginador.appendChild(span);
-        }
-    }
-
-    for (let i = start; i <= end; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        btn.className = (i===paginaAtual) ? 'px-3 py-2 rounded bg-indigo-600 text-white mr-1' : 'px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-white mr-1';
-        btn.onclick = (()=>{ const p=i; return ()=>{ paginaAtual=p; renderizarImplantacoesPaginadas(); }; })();
-        paginador.appendChild(btn);
-    }
-
-    if (end < totalPaginas) {
-        if (end < totalPaginas - 1) {
-            const span = document.createElement('span'); span.textContent = '...'; span.className='px-2 text-white/70'; paginador.appendChild(span);
-        }
-        const btnLast = document.createElement('button');
-        btnLast.textContent = totalPaginas;
-        btnLast.className = 'px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-white mr-1';
-        btnLast.onclick = () => { paginaAtual = totalPaginas; renderizarImplantacoesPaginadas(); };
-        paginador.appendChild(btnLast);
-    }
-
-    // botão próximo
-    const btnNext = document.createElement('button');
-    btnNext.className = 'px-3 py-2 rounded ml-2 bg-white/10 hover:bg-white/20 text-white';
-    btnNext.textContent = '▶';
-    btnNext.onclick = () => {
-        if (paginaAtual < totalPaginas) { paginaAtual++; renderizarImplantacoesPaginadas(); }
-    };
-    paginador.appendChild(btnNext);
-}
-
-// --- Hook para processarImportacao (se existir) para garantir atualização pós-importação ---
-(function() {
-    if (typeof processarImportacao === 'function') {
-        const _orig = processarImportacao;
-        window.processarImportacao = async function() {
-            try {
-                await _orig.apply(this, arguments);
-            } catch (e) {
-                console.error('Erro ao executar processarImportacao original:', e);
-            }
-            try { salvarDadosLocais(); } catch(e) {}
-            try { renderizarImplantacoesPaginadas(); } catch(e) {}
-            try { atualizarEstatisticas(); } catch(e) {}
-            try { fecharModalImportacao(); } catch(e) {}
-        };
-    } else {
-        // Se não existe, expor uma função que pode ser chamada manualmente
-        window.finalizarImportacao = function() {
-            try { salvarDadosLocais(); } catch(e) {}
-            try { renderizarImplantacoesPaginadas(); } catch(e) {}
-            try { atualizarEstatisticas(); } catch(e) {}
-            try { fecharModalImportacao(); } catch(e) {}
-        };
-    }
-})();
-
-// Se alguém chamar window.renderizarImplantacoes, garantimos que use a versão paginada
-window.renderizarImplantacoes = function() {
-    try {
-        renderizarImplantacoesPaginadas();
-    } catch (e) {
-        console.error('Erro ao chamar renderizarImplantacoes paginada:', e);
-    }
-};
-
-// Inicializar paginação ao carregar, se houver dados
-window.addEventListener('load', function() {
-    try {
-        if (obterTotalImplantacoes() > 0) {
-            renderizarImplantacoesPaginadas();
-        } else {
-            // caso não haja dados, ainda atualiza botoes (gera paginação mínima)
-            atualizarBotoesPaginacao();
-        }
-    } catch (e) {
-        console.error('Erro na inicialização da paginação:', e);
-    }
-});
-</script>
-
-
-<!-- ===== PAGINAÇÃO FUNCIONAL ===== -->
-<script>
-let paginaAtual = 1;
-const itensPorPagina = 20;
-
-function renderizarImplantacoesPaginado() {
-    const container = document.getElementById('listaImplantacoes');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (implantacoes.length === 0) {
-        renderizarImplantacoes(); // mantém layout original
-        return;
-    }
-
-    const inicio = (paginaAtual - 1) * itensPorPagina;
-    const fim = inicio + itensPorPagina;
-    const pagina = implantacoes.slice(inicio, fim);
-
-    pagina.forEach((impl, index) => {
-        const card = criarCardImplantacao(impl, inicio + index);
-        container.appendChild(card);
-    });
-
-    renderizarPaginacao();
-}
-
-function renderizarPaginacao() {
-    const totalPaginas = Math.ceil(implantacoes.length / itensPorPagina);
-    const paginacaoContainer = document.querySelector('.paginacao-container');
-
-    if (!paginacaoContainer) {
-        const main = document.querySelector('main');
-        const div = document.createElement('div');
-        div.className = 'paginacao-container flex justify-center items-center space-x-2 mt-12';
-        main.appendChild(div);
-    }
-
-    const container = document.querySelector('.paginacao-container');
-    container.innerHTML = '';
-
-    if (totalPaginas <= 1) return;
-
-    const btnAnterior = document.createElement('button');
-    btnAnterior.className = 'bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors';
-    btnAnterior.innerHTML = '&lt;';
-    btnAnterior.onclick = () => irParaPagina(paginaAtual - 1);
-    btnAnterior.disabled = paginaAtual === 1;
-    container.appendChild(btnAnterior);
-
-    for (let i = 1; i <= totalPaginas; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        btn.className = (i === paginaAtual)
-            ? 'bg-indigo-600 px-4 py-2 rounded-lg text-white font-medium'
-            : 'bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors';
-        btn.onclick = () => irParaPagina(i);
-        container.appendChild(btn);
-    }
-
-    const btnProximo = document.createElement('button');
-    btnProximo.className = 'bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition-colors';
-    btnProximo.innerHTML = '&gt;';
-    btnProximo.onclick = () => irParaPagina(paginaAtual + 1);
-    btnProximo.disabled = paginaAtual === totalPaginas;
-    container.appendChild(btnProximo);
-}
-
-function irParaPagina(pagina) {
-    const totalPaginas = Math.ceil(implantacoes.length / itensPorPagina);
-    if (pagina < 1 || pagina > totalPaginas) return;
-    paginaAtual = pagina;
-    renderizarImplantacoesPaginado();
-}
-
-// Substituir renderização original para aplicar paginação
-const renderizarImplantacoesOriginal = renderizarImplantacoes;
-renderizarImplantacoes = function() {
-    renderizarImplantacoesPaginado();
-};
-
-// Reaplicar paginação automaticamente
-const salvarDadosLocaisOriginal = salvarDadosLocais;
-salvarDadosLocais = function() {
-    salvarDadosLocaisOriginal();
-    renderizarImplantacoesPaginado();
-};
-
-const inicializarSistemaLocalOriginal = inicializarSistemaLocal;
-inicializarSistemaLocal = function() {
-    inicializarSistemaLocalOriginal();
-    renderizarImplantacoesPaginado();
-};
-</script>
-<!-- ===== FIRESTORE SYNC (V111) ===== -->
-<!-- IMPORTANTE: Cole suas credenciais firebaseConfig no bloco mais abaixo (remova os valores comentados) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script>
-// === CONFIGURAÇÃO DO FIREBASE ===
-// --- ATENÇÃO: cole suas credenciais AQUI, substituindo os valores comentados ---
-// NÃO cole essas credenciais em chat público — cole apenas no seu arquivo local.
-// Exemplo de objeto para colar (substitua os textos "COLE_AQUI..." pelos seus valores):
-/*
-const firebaseConfig = {
-  apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
-  authDomain: "controle-agv.firebaseapp.com",
-  projectId: "controle-agv",
-  storageBucket: "controle-agv.firebasestorage.app",
-  messagingSenderId: "220840335975",
-  appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
-};
-*/
- 
-// NÃO COLOQUE AS CHAVES AQUI NO CHAT. Cole-as diretamente no arquivo V111 após o download.
-
-let firebaseInitialized = false;
-let firestoreCollectionRef = null;
-let isSyncingWithFirestore = false;
-const COLLECTION_NAME = "implantacoesnew"; // coleção usada no Firestore
-
-function inicializarFirestoreSeConfigurado() {
-    try {
-        if (typeof firebaseConfig !== 'undefined' && firebaseConfig) {
-            if (!firebaseInitialized) {
-                // inicializa compat SDK
-                firebase.initializeApp(firebaseConfig);
-                const db = firebase.firestore();
-                firestoreCollectionRef = db.collection(COLLECTION_NAME);
-                firebaseInitialized = true;
-                console.log('✅ Firebase inicializado (compat).');
-
-                // Ouvir alterações em tempo real
-                firestoreCollectionRef.onSnapshot(snapshot => {
-                    if (isSyncingWithFirestore) return;
-                    const dados = [];
-                    snapshot.forEach(doc => {
-                        const item = doc.data();
-                        item.id = item.id || doc.id;
-                        dados.push(item);
-                    });
-                    console.log('🔔 Atualização recebida do Firestore:', dados.length, 'registros');
-                    implantacoes = dados;
-                    // Atualiza localStorage (usa cópia original se existir)
-                    if (typeof salvarDadosLocaisOriginal === 'function') {
-                        salvarDadosLocaisOriginal();
-                    } else {
-                        //try { localStorage.setItem('implantacoes_agv', JSON.stringify(implantacoes)); } catch(e){}
-                    }
-                    renderizarImplantacoes();
-                    atualizarEstatisticas();
-                }, err => {
-                    console.error('❌ Erro ao ouvir Firestore:', err);
-                });
-            }
-        } else {
-            console.log('⚠️ Firebase não configurado: cole firebaseConfig no arquivo V111 para ativar sincronização.');
-        }
-    } catch (e) {
-        console.error('❌ Erro inicializando Firestore:', e);
-    }
-}
-
-// Envia todo o conjunto local para Firestore (batch)
-async function sincronizarComFirestore() {
-    if (!firebaseInitialized || !firestoreCollectionRef) return;
-    try {
-        isSyncingWithFirestore = true;
-        const db = firebase.firestore();
-        const batch = db.batch();
-        implantacoes.forEach(item => {
-            // usa item.id se existir, caso contrário permite Firestore gerar id
-            const docRef = item.id ? firestoreCollectionRef.doc(item.id) : firestoreCollectionRef.doc();
-            // garante que o item terá id (para manter consistência local <-> remoto)
-            if (!item.id) item.id = docRef.id;
-            batch.set(docRef, item, { merge: true });
-        });
-        await batch.commit();
-        console.log('✅ Sincronização com Firestore concluída:', implantacoes.length, 'registros');
-    } catch (err) {
-        console.error('❌ Erro ao sincronizar com Firestore:', err);
-    } finally {
-        // pequeno delay para evitar loop com o onSnapshot
-        setTimeout(()=>{ isSyncingWithFirestore = false; }, 500);
-    }
-}
-
-// Inicializar automaticamente quando a página carrega
-document.addEventListener('DOMContentLoaded', function() {
-    inicializarFirestoreSeConfigurado();
-});
-
-// Integrar com salvarDadosLocais original (preservando comportamento)
-if (typeof salvarDadosLocais === 'function') {
-    const originalSalvar = salvarDadosLocais;
-    // Expor original para o listener de snapshot usar sem regravar novamente
-    window.salvarDadosLocaisOriginal = originalSalvar;
-    salvarDadosLocais = function() {
-        // chama original (salva no localStorage)
-        originalSalvar();
-        // tenta inicializar Firebase (caso as credenciais tenham sido adicionadas)
-        try { inicializarFirestoreSeConfigurado(); } catch(e){}
-        // sincroniza em background
-        sincronizarComFirestore();
-    };
-} else {
-    console.warn('⚠️ salvarDadosLocais não encontrado. Importações ainda serão locais até integrar manualmente.');
-}
-
-// Forçar carregar do Firestore ao inicializar sistema local se disponível
-if (typeof inicializarSistemaLocal === 'function') {
-    const originalInit = inicializarSistemaLocal;
-    window.inicializarSistemaLocalOriginal = originalInit;
-    inicializarSistemaLocal = function() {
-        originalInit();
-        try { inicializarFirestoreSeConfigurado(); } catch(e){}
-        if (firebaseInitialized && firestoreCollectionRef) {
-            firestoreCollectionRef.get().then(snapshot => {
-                const dados = [];
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    item.id = item.id || doc.id;
-                    dados.push(item);
-                });
-                if (dados.length > 0) {
-                    implantacoes = dados;
-                    if (typeof salvarDadosLocaisOriginal === 'function') {
-                        salvarDadosLocaisOriginal();
-                    } else {
-                       // try { localStorage.setItem('implantacoes_agv', JSON.stringify(implantacoes)); } catch(e){}
-                    }
-                    renderizarImplantacoes();
-                    atualizarEstatisticas();
-                }
-            }).catch(err => console.error('❌ Erro ao buscar dados iniciais do Firestore:', err));
-        }
-    };
-} else {
-    console.warn('⚠️ inicializarSistemaLocal não encontrado.');
-}
-
-// Utilitário para forçar sincronização manualmente (útil para admin/debug)
-function forcarSincronizacao() {
-    try { inicializarFirestoreSeConfigurado(); } catch(e){}
-    sincronizarComFirestore();
-    mostrarNotificacao('🔄 Sincronização forçada iniciada', 'success');
-}
-</script>
-<!-- ===== FIM FIRESTORE SYNC ===== -->
-
-
-<!-- ===== INTEGRAÇÃO FIRESTORE - V2 (substitui localStorage) ===== -->
-
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script>
-(function(){
-    const firebaseConfig = {
-      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
-      authDomain: "controle-agv.firebaseapp.com",
-      projectId: "controle-agv",
-      storageBucket: "controle-agv.firebasestorage.app",
-      messagingSenderId: "220840335975",
-      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
-    };
-
-  // Não colocar chaves em chats públicos. Cole apenas no arquivo local.
-  const COLLECTION_NAME = "implantacoesnew";
-  let firebaseInitialized = false;
-  let auth = null;
-  let db = null;
-  let colRef = null;
-  let unsubscribeSnapshot = null;
-
-  function initFirebase() {
-    if (firebaseInitialized) return;
-    if (typeof firebaseConfig === 'undefined' || !firebaseConfig) {
-      console.warn('Firestore não configurado (firebaseConfig ausente). Cole suas credenciais no arquivo.');
-      return;
-    }
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth();
-      db = firebase.firestore();
-      colRef = db.collection(COLLECTION_NAME);
-      firebaseInitialized = true;
-      console.log('✅ Firebase inicializado (V2)');
-      attachAuthListener();
-    } catch(e) {
-      console.error('Erro inicializando Firebase:', e);
-    }
-  }
-
-function attachAuthListener() {
-try {
-  const auth = getAuth(app);
-  signInAnonymously(auth)
-    .then(() => console.log("auth: anônimo ativo"))
-    .catch(() => console.warn("⚠️ Login anônimo ignorado (sem autenticação)."));
-} catch(e) {
-  console.warn("⚠️ Firebase Auth não utilizado neste ambiente.");
-}
-  }
-
-  function startRealtimeListener() {
-    if (!colRef) return;
-    if (unsubscribeSnapshot) {
-      try { unsubscribeSnapshot(); } catch(e){}
-      unsubscribeSnapshot = null;
-    }
-    unsubscribeSnapshot = colRef.orderBy('criadoEm','desc').onSnapshot(snapshot => {
-      const dados = [];
-      snapshot.forEach(doc => {
-        const item = doc.data();
-        item.id = doc.id;
-        dados.push(item);
-      });
-      // Replace global implantacoes array and re-render
-      try {
-        window.implantacoes = dados;
-        if (typeof renderizarImplantacoes === 'function') renderizarImplantacoes();
-        if (typeof atualizarEstatisticas === 'function') atualizarEstatisticas();
-      } catch(e) { console.error(e); }
-      console.log('🔁 Sincronizado com Firestore — registros:', dados.length);
-    }, err => {
-      console.error('Erro snapshot Firestore:', err);
-    });
-  }
-
-  // Override initialization to use Firebase-only
-  if (typeof window.inicializarSistemaLocal === 'function') {
-    const origInit = window.inicializarSistemaLocal;
-    window.inicializarSistemaLocal = function() {
-      // do not call original local storage initialization
-      initFirebase();
-      // originalInit intentionally not called to avoid localStorage usage
-      console.log('initialization replaced: running Firebase-only mode');
-    };
-  } else {
-    window.inicializarSistemaLocal = function() { initFirebase(); };
-  }
-
-  // Disable local save function if present
-  if (typeof window.salvarDadosLocais === 'function') {
-    window.salvarDadosLocais = function() {
-      console.log('salvarDadosLocais desativado (modo Firestore). Use salvarImplantacaoFirestore/confirmarExclusao.');
-    };
-  }
-
-  // Replace salvar/editar/excluir operations to act on Firestore
-  window.salvarImplantacaoFirestore = async function(implantacao) {
-    if (!firebaseInitialized) { initFirebase(); if (!firebaseInitialized) throw new Error('Firebase não inicializado'); }
-    try {
-      if (!implantacao.id) {
-        const docRef = colRef.doc();
-        implantacao.id = docRef.id;
-        implantacao.criadoEm = new Date().toISOString();
-        implantacao.atualizadoEm = new Date().toISOString();
-        await docRef.set(implantacao);
-      } else {
-        implantacao.atualizadoEm = new Date().toISOString();
-        await colRef.doc(implantacao.id).set(implantacao, { merge: true });
-      }
-      console.log('Registro salvo no Firestore:', implantacao.id);
-      return implantacao;
-    } catch(e) {
-      console.error('Erro salvarImplantacaoFirestore:', e);
-      throw e;
-    }
-  };
-
-  // Map existing UI functions to Firestore functions where appropriate
-  // If your code calls novaImplantacao()/editarImplantacao()/confirmarExclusao(index), we'll provide minimal adapters.
-  window.confirmarExclusao = async function(indexOrId) {
-    try {
-      let id = indexOrId;
-      if (typeof indexOrId === 'number') {
-        const item = window.implantacoes && window.implantacoes[indexOrId];
-        if (!item) return;
-        id = item.id;
-      }
-      if (!id) return;
-      if (!firebaseInitialized) initFirebase();
-      await colRef.doc(id).delete();
-      console.log('Documento excluído:', id);
-    } catch(e) {
-      console.error('Erro ao excluir documento:', e);
-      throw e;
-    }
-  };
-
-  // Adapt processarImportacao to write window.dadosExcel into Firestore
-  window.processarImportacao = async function() {
-    try {
-      if (!window.dadosExcel || !Array.isArray(window.dadosExcel) || window.dadosExcel.length === 0) {
-        alert('Nenhum dado para importar.');
-        return;
-      }
-      if (!firebaseInitialized) initFirebase();
-      const promises = [];
-      for (let i=0;i<window.dadosExcel.length;i++) {
-        const row = window.dadosExcel[i];
-        const docRef = colRef.doc();
-        const impl = Object.assign({}, row);
-        impl.id = docRef.id;
-        impl.criadoEm = new Date().toISOString();
-        impl.atualizadoEm = new Date().toISOString();
-        impl.origemImportacao = 'excel';
-        promises.push(docRef.set(impl));
-      }
-      await Promise.all(promises);
-      alert('Importação concluída. Registros enviados ao Firestore.');
-      // trigger immediate refresh via snapshot listener
-    } catch(e) {
-      console.error('Erro processarImportacao:', e);
-      alert('Erro ao importar. Veja console.');
-    }
-  };
-
-  // When original code calls salvarDadosLocais after editing, override edit/save flows by providing a helper function that editors should call.
-  // If your UI calls a specific function to persist forms, you can update it to call salvarImplantacaoFirestore instead.
-  // But we also provide a gentle global hook: if code calls salvarDadosLocais(), it's now a no-op; editors should call salvarImplantacaoFirestore(document).
-  window.salvarImplantacao = async function(implantacao) {
-    return await window.salvarImplantacaoFirestore(implantacao);
-  };
-
-  
-  // Auto-init on DOMContentLoaded
-  document.addEventListener('DOMContentLoaded', function(){ initFirebase(); });
-
-})(); // IIFE
-</script>
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, onSnapshot, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
-      authDomain: "controle-agv.firebaseapp.com",
-      projectId: "controle-agv",
-      storageBucket: "controle-agv.firebasestorage.app",
-      messagingSenderId: "220840335975",
-      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
-    };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  window.db = db; // deixa acessível para o resto do script
-</script>
-</body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9972c42831aaf1ce',t:'MTc2MTkwOTY1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
