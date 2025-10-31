@@ -2199,14 +2199,14 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const implantacoesRef = collection(db, "implantacoes");
+  const implantacoesRef = collection(db, "implantacoesnew");
 
   // Expor utilitários globalmente
   window._firestore = { db, implantacoesRef };
 
   // Carregamento em tempo real
   function iniciarSincronizacaoFirestore() {
-      console.log("🌐 Conectando ao Firestore (coleção: implantacoes)...");
+      console.log("🌐 Conectando ao Firestore (coleção: implantacoesnew)...");
       onSnapshot(implantacoesRef, (snapshot) => {
           const lista = [];
           snapshot.forEach(d => {
@@ -2236,7 +2236,7 @@
               delete payload.id; // id is Firestore doc id
               // If item has an id, update; otherwise add
               if (item.id) {
-                  const docRef = doc(db, "implantacoes", item.id);
+                  const docRef = doc(db, "implantacoesnew", item.id);
                   await updateDoc(docRef, payload);
               } else {
                   const added = await addDoc(implantacoesRef, payload);
@@ -2267,7 +2267,7 @@
   async function atualizarImplantacaoFirestore(id, payload) {
       try {
           payload.atualizadoEm = new Date().toISOString();
-          const docRef = doc(db, "implantacoes", id);
+          const docRef = doc(db, "implantacoesnew", id);
           await updateDoc(docRef, payload);
           console.log("✅ Implantação atualizada no Firestore:", id);
       } catch (err) {
@@ -2278,7 +2278,7 @@
 
   async function excluirImplantacaoFirestore(id) {
       try {
-          const docRef = doc(db, "implantacoes", id);
+          const docRef = doc(db, "implantacoesnew", id);
           await deleteDoc(docRef);
           console.log("🗑️ Implantação excluída do Firestore:", id);
       } catch (err) {
