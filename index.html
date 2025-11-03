@@ -296,32 +296,45 @@
             window.location.href = '../index.html';
         }
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Verificar se já está logado
-            const cpfSalvo = localStorage.getItem('cpfUsuario');
-            if (cpfSalvo) {
-                // Verificar se é administrador
-                if (cpfsAdministradores.includes(cpfSalvo)) {
-                    usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
-                } else if (cpfSalvo.length === 11 && /^\d+$/.test(cpfSalvo)) {
-                    usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
-                }
-                
-                if (usuarioAtual) {
-                    await fazerLogin(cpfSalvo);
-                } else {
-                    mostrarModalLogin();
-                }
-            } else {
-                mostrarModalLogin();
-            }
+// Inicialização
+document.addEventListener('DOMContentLoaded', async function() {
+    const cpfSalvo = localStorage.getItem('cpfUsuario');
+    console.log('CPF salvo no localStorage:', cpfSalvo); 
+    
+    if (cpfSalvo) {
+        // Lógica de definição de usuário (admin/viewer)
+        if (cpfsAdministradores.includes(cpfSalvo)) {
+            usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
+        } else if (cpfSalvo.length === 11 && /^\d+$/.test(cpfSalvo)) {
+            usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
+        }
 
-            // Inicializar sistema local
-            if (!sistemaInicializado) {
-                console.log('💾 Inicializando sistema...');
-                inicializarSistemaLocal();
+        // 🟢 PONTO DE SUCESSO DO LOGIN/RECUPERAÇÃO
+        if (usuarioAtual) {
+            await fazerLogin(cpfSalvo);
+            
+            // 1. Mostrar o painel após o login ser concluído
+            mostrarPainel(); 
+            
+            // 2. Iniciar a sincronização do Firebase AGORA
+            if (typeof window.iniciarSincronizacaoFirestore === 'function') {
+                window.iniciarSincronizacaoFirestore(); 
+                console.log("🔥 Sincronização do Firestore iniciada após login.");
+            } else {
+                 console.error("❌ A função iniciarSincronizacaoFirestore não está disponível.");
             }
+        } else {
+            // Se o CPF estava no localStorage, mas a validação falhou (deveria ser raro)
+            mostrarModalLogin();
+        }
+        
+    } else {
+        // Se não houver CPF salvo
+        mostrarModalLogin();
+    }
+    
+    // (O seu código final de inicialização do sistema local não deve mais ser necessário)
+});
 
             // Configurar máscara de CPF
             const cpfInput = document.getElementById('cpfInput');
@@ -2056,6 +2069,19 @@ async function confirmarExclusao(implantacaoId) { // Recebe ID, não index/fireb
                 }
             }, 5000);
         }
+// ⚠️ NO SEU SCRIPT PRINCIPAL (o que NÃO tem type="module"):
+
+window.renderizarImplantacoesPaginadas = function() {
+    // ... código para renderizar a tabela ...
+    console.log('Página renderizada com sucesso!');
+};
+
+window.atualizarEstatisticas = function() {
+    // ... código para atualizar os números do dashboard ...
+    console.log('Estatísticas atualizadas.');
+};
+
+// Agora, essas funções estão anexadas ao objeto "window" e qualquer outro script as verá.   
     </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99202e32042c9a86',t:'MTc2MTA0MzY4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 <!-- FIREBASE FIRESTORE (integração adicionada) -->
@@ -2098,12 +2124,22 @@ async function confirmarExclusao(implantacaoId) { // Recebe ID, não index/fireb
               data.id = d.id;
               lista.push(data);
           });
-          // substituir o array global mantendo referência
-          window.implantacoes = lista.sort((a,b)=> (b.criadoEm||'').localeCompare(a.criadoEm||''));
-          console.log(`✅ ${lista.length} implantações sincronizadas do Firestore`);
-          if (typeof renderizarImplantacoes === "function") renderizarImplantacoes();
-          if (typeof atualizarEstatisticas === "function") atualizarEstatisticas();
-      }, (err)=>{
+// ⬇️ CORREÇÃO: Garanta que a função PAGINADA é chamada (ou o alias global)
+    if (typeof window.renderizarImplantacoes === "function") {
+        window.renderizarImplantacoes();
+    } else {
+        // Se o alias não existir, tente a função paginada diretamente
+        if (typeof window.renderizarImplantacoesPaginadas === "function") {
+             window.renderizarImplantacoesPaginadas();
+        }
+    }
+    
+    if (typeof window.atualizarEstatisticas === "function") {
+         window.atualizarEstatisticas();
+    }
+    
+    // ⬆️ FIM DA CORREÇÃO
+}, (err)=>{
           console.error("❌ Erro onSnapshot:", err);
       });
   }
