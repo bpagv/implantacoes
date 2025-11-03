@@ -346,39 +346,16 @@
             }
         });
 
-        function inicializarSistemaLocal() {
-            console.log('💾 Inicializando sistema...');
-            
-            try {
-                // Carregar dados do localStorage
-                const dadosSalvos = localStorage.getItem('implantacoes_agv');
-                if (dadosSalvos) {
-                    implantacoes = JSON.parse(dadosSalvos);
-                    console.log(`✅ ${implantacoes.length} implantações carregadas`);
-                } else {
-                    console.log('📝 Nenhuma implantação encontrada');
-                    implantacoes = [];
-                }
-                
-                sistemaInicializado = true;
-                renderizarImplantacoes();
-                atualizarEstatisticas();
-                
-                console.log('✅ Sistema inicializado com sucesso');
-            } catch (error) {
-                console.error('❌ Erro ao inicializar sistema:', error);
-                mostrarNotificacao('❌ Erro ao carregar dados', 'error');
-            }
+function inicializarSistemaLocal() {
+            // Esta função agora é controlada pelo script do Firebase [cite: 604]
+            // O código local antigo (localStorage.getItem) [cite: 59, 60] foi removido.
+            console.log('Sistema local (agora Firebase) inicializando...');
         }
 
-        function salvarDadosLocais() {
-            try {
-                localStorage.setItem('implantacoes_agv', JSON.stringify(implantacoes));
-                console.log('💾 Dados salvos');
-            } catch (error) {
-                console.error('❌ Erro ao salvar dados:', error);
-                mostrarNotificacao('❌ Erro ao salvar dados', 'error');
-            }
+function salvarDadosLocais() {
+            // Esta função agora é controlada pelo script do Firebase [cite: 603]
+            // O código local antigo (localStorage.setItem) [cite: 65] foi removido.
+            console.log('Salvamento local (agora Firebase) solicitado...');
         }
 
         function mostrarModalLogin() {
@@ -613,12 +590,12 @@
                                 Ver Detalhes
                             </button>
                             ${permissoes.podeEditar ? `
-                                <button onclick="editarImplantacao(${index})" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
+                                <button onclick="editarImplantacao('${impl.id}')" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
                                     Editar
                                 </button>
                             ` : ''}
                             ${permissoes.podeExcluir ? `
-                                <button onclick="confirmarExclusao(${index})" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
+                                <button onclick="confirmarExclusao('${impl.id}')" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
                                     Excluir
                                 </button>
                             ` : ''}
@@ -1188,32 +1165,21 @@
             previewContainer.classList.remove('hidden');
         }
 
-        async function processarImportacao() {
+async function processarImportacao() {
             if (!permissoes.podeIncluir) {
                 mostrarNotificacao('❌ Você não tem permissão para importar dados', 'error');
                 return;
             }
-
             if (dadosExcel.length === 0) {
                 mostrarNotificacao('❌ Nenhum dado para importar', 'error');
                 return;
             }
-
-            // Verificar se sistema local está pronto
-            if (!sistemaLocalReady) {
-                console.error('❌ Sistema local não inicializado');
-                mostrarNotificacao('❌ Sistema local não inicializado. Recarregue a página.', 'error');
-                return;
-            }
-
-            console.log('✅ Sistema local verificado e pronto para importação');
 
             const btnImportar = document.getElementById('btnImportarExcel');
             const progressoContainer = document.getElementById('progressoImportacao');
             const barraProgresso = document.getElementById('barraProgresso');
             const textoProgresso = document.getElementById('textoProgresso');
             
-            // Mostrar progresso
             progressoContainer.classList.remove('hidden');
             btnImportar.disabled = true;
             btnImportar.innerHTML = '<div class="loading mr-2"></div>Iniciando importação...';
@@ -1221,159 +1187,90 @@
             let sucessos = 0;
             let erros = 0;
             const total = dadosExcel.length;
-
+            
             try {
-                console.log(`🚀 Iniciando importação de ${total} registros para sistema local...`);
+                console.log(`🚀 Iniciando importação de ${total} registros para Firebase...`);
                 textoProgresso.textContent = `Iniciando importação de ${total} registros...`;
                 barraProgresso.style.width = '0%';
-
-                // Aguardar um pouco para mostrar o progresso inicial
+                
                 await new Promise(resolve => setTimeout(resolve, 300));
-
+                
                 for (let i = 0; i < dadosExcel.length; i++) {
                     const item = dadosExcel[i];
-                    
                     try {
-                        console.log(`📝 Processando registro ${i + 1}/${total}:`, item);
-                        
-                        // Atualizar progresso ANTES de processar
                         const progressoAtual = ((i + 0.5) / total) * 100;
                         barraProgresso.style.width = `${progressoAtual}%`;
                         textoProgresso.textContent = `Processando registro ${i + 1} de ${total}...`;
                         btnImportar.innerHTML = `<div class="loading mr-2"></div>Processando ${i + 1}/${total}...`;
-                        
-                        // Aguardar para mostrar progresso
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                        
-                        console.log(`🔄 Iniciando processamento do registro ${i + 1}...`);
-                        
-                        // Permitir importação mesmo com campos em branco - usar valores padrão
-                        console.log(`📝 Processando registro ${i + 1} (permitindo campos em branco):`, item);
 
-                        // Mapear campos do Excel para o formato local usando nomes exatos
-                        // Permitir campos em branco com valores padrão apropriados
                         const implantacao = {
-                            id: `EXCEL-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 6)}`,
-                            
-                            // Campos principais - usar valores padrão quando em branco
+                            // ATENÇÃO: Removido o 'id: EXCEL-...'[cite: 306]. O ID será gerado pelo Firebase.
                             status: mapearStatus(String(item['Status'] || 'andamento')),
                             chamado: String(item['Chamado'] || `AUTO-${Date.now()}-${i + 1}`),
                             campanha: String(item['Campanha'] || `Campanha Importada ${i + 1}`),
                             fornecedor: mapearFornecedor(String(item['Fornecedor'] || 'Não informado')),
                             carteira: String(item['Carteira'] || 'Não informada'),
                             tipoAgv: mapearTipoAgv(String(item['Tipo AGV'] || 'Não informado')),
-                            
-                            // Datas - converter do formato brasileiro para ISO
                             dataSolicitacao: converterDataParaISO(item['Data Solicitação']),
                             dataEntrega: converterDataParaISO(item['Data Entrega']),
                             dataCancelamento: converterDataParaISO(item['Data Cancelamento']),
-                            
-                            // Números
                             licencas: parseInt(item['Licenças'] || 0) || 0,
                             diasProducao: parseInt(item['Dias Produção'] || 0) || 0,
-                            
-                            // Metadados
                             criadoPor: `${usuarioAtual.nome} (Importação Excel)`,
-                            criadoEm: new Date().toISOString(),
-                            atualizadoEm: new Date().toISOString(),
                             importadoEm: new Date().toISOString(),
                             origemImportacao: 'excel'
+                            // Os campos criadoEm e atualizadoEm serão adicionados pela função do Firebase [cite: 595, 596]
                         };
 
-                        console.log(`💾 Salvando registro ${i + 1}:`, implantacao);
-
-                        // Salvar no sistema local
-                        implantacoes.push(implantacao);
+                        // MODIFICADO: Chamando a função do Firebase (exposta globalmente) [cite: 608]
+                        await window.salvarNovaImplantacao(implantacao);
                         
                         sucessos++;
-                        console.log(`🎉 Registro ${i + 1} salvo com sucesso!`);
                         
                     } catch (error) {
-                        console.error(`❌ Erro ao importar registro ${i + 1}:`, error, item);
+                        console.error(`❌ Erro ao importar registro ${i + 1} para o Firebase:`, error, item);
                         erros++;
-                        
-                        // Log detalhado do erro
-                        const motivoErro = error.message || error.code || 'Erro desconhecido';
-                        console.error(`📝 Detalhes do erro no registro ${i + 1}:`, {
-                            erro: motivoErro,
-                            codigoErro: error.code,
-                            dadosRegistro: item,
-                            linha: i + 2, // +2 porque começamos do índice 0 e temos cabeçalho
-                            stackTrace: error.stack
-                        });
-                        
-                        // Aguardar um pouco antes de continuar para não sobrecarregar
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                        
-                        // Mostrar erro específico apenas nos primeiros erros
                         if (erros <= 3) {
-                            mostrarNotificacao(`❌ Erro no registro ${i + 1}: ${motivoErro}`, 'error');
+                            mostrarNotificacao(`❌ Erro no registro ${i + 1}: ${error.message}`, 'error');
                         }
                     }
 
-                    // Atualizar progresso APÓS processar
                     const progressoFinal = ((i + 1) / total) * 100;
                     barraProgresso.style.width = `${progressoFinal}%`;
                     textoProgresso.textContent = `Concluído ${i + 1} de ${total} registros (${sucessos} sucessos, ${erros} erros)`;
                     btnImportar.innerHTML = `<div class="loading mr-2"></div>Salvando ${i + 1}/${total}...`;
                     
-                    // Pausa menor para não travar
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                    // Pausa para não sobrecarregar o Firebase (opcional, mas recomendado)
+                    await new Promise(resolve => setTimeout(resolve, 50)); 
                 }
 
-                // Salvar todos os dados no localStorage após importação
-                if (sucessos > 0) {
-                    console.log('💾 Salvando dados...');
-                    salvarDadosLocais();
-                    renderizarImplantacoes();
-                    atualizarEstatisticas();
-                }
+                // MODIFICADO: REMOVEMOS A CHAMADA salvarDadosLocais() 
+                // O onSnapshot [cite: 584] irá atualizar a tela com os novos dados.
 
-                // Resultado final
-                console.log(`🏁 Importação finalizada: ${sucessos} sucessos, ${erros} erros`);
-                
-                // Atualizar progresso final
+                console.log(`🏁 Importação Firebase finalizada: ${sucessos} sucessos, ${erros} erros`);
                 barraProgresso.style.width = '100%';
                 textoProgresso.textContent = `Importação finalizada! ${sucessos} sucessos, ${erros} erros`;
-                btnImportar.innerHTML = `<div class="loading mr-2"></div>Finalizando...`;
                 
-                // Aguardar um pouco antes de mostrar resultado
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
                 if (sucessos > 0) {
-                    const mensagemSucesso = erros > 0 
-                        ? `💾 Importação concluída! ${sucessos} registros salvos. ${erros} registros com erro - verifique o console para detalhes.`
-                        : `💾 Importação 100% concluída! ${sucessos} registros salvos com sucesso!`;
+                    const msg = erros > 0 
+                        ? `🔥 Importação concluída! ${sucessos} salvos. ${erros} com erro.`
+                        : `🔥 Importação 100% concluída! ${sucessos} registros salvos!`;
+                    mostrarNotificacao(msg, erros > 0 ? 'warning' : 'success');
                     
-                    mostrarNotificacao(mensagemSucesso, erros > 0 ? 'warning' : 'success');
-                    
-                    // Fechar modal após 2 segundos
-                    setTimeout(() => {
-                        fecharModalImportacao();
-                    }, 2000);
+                    setTimeout(() => fecharModalImportacao(), 2000);
                 } else {
-                    mostrarNotificacao(`❌ Nenhum registro foi importado. Total de erros: ${erros}. Verifique o console para detalhes dos erros.`, 'error');
-                    console.error('📋 Resumo dos erros de importação:', {
-                        totalRegistros: total,
-                        sucessos: sucessos,
-                        erros: erros,
-                        arquivoProcessado: dadosExcel
-                    });
+                    mostrarNotificacao(`❌ Nenhum registro foi importado. Total de erros: ${erros}.`, 'error');
                 }
                 
             } catch (error) {
-                console.error('❌ Erro geral na importação:', error);
+                console.error('❌ Erro geral na importação Firebase:', error);
                 mostrarNotificacao(`❌ Erro durante a importação: ${error.message}`, 'error');
             } finally {
-                // Restaurar botão
                 setTimeout(() => {
                     btnImportar.disabled = false;
-                    btnImportar.innerHTML = `
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Importação Finalizada</span>
-                    `;
+                    btnImportar.innerHTML = `<span>Importação Finalizada</span>`;
                 }, 1000);
             }
         }
@@ -1693,7 +1590,7 @@
             });
         }
 
-        async function criarImplantacao() {
+async function criarImplantacao() {
             if (!permissoes.podeIncluir) {
                 mostrarNotificacao('❌ Você não tem permissão para criar implantações', 'error');
                 return;
@@ -1706,8 +1603,6 @@
             }
 
             const formData = new FormData(form);
-            
-            // Validar campos obrigatórios
             const camposObrigatorios = ['status', 'chamado', 'dataSolicitacao', 'fornecedor', 'carteira', 'campanha', 'tipoAgv'];
             const camposFaltando = camposObrigatorios.filter(campo => !formData.get(campo));
             
@@ -1716,8 +1611,8 @@
                 return;
             }
             
+            // ATENÇÃO: Removido o 'id: AGV-${Date.now()}'[cite: 431]. O ID será gerado pelo Firebase.
             const novaImplantacao = {
-                id: `AGV-${Date.now()}`,
                 status: formData.get('status'),
                 chamado: formData.get('chamado'),
                 dataSolicitacao: formData.get('dataSolicitacao'),
@@ -1735,43 +1630,33 @@
                 observacoes: formData.get('observacoes'),
                 proximasEtapas: formData.get('proximasEtapas'),
                 criadoPor: usuarioAtual.nome,
-                criadoEm: new Date().toISOString(),
-                atualizadoEm: new Date().toISOString()
+                // Os campos criadoEm e atualizadoEm serão adicionados pela função do Firebase [cite: 595, 596]
             };
 
-            // Mostrar loading
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<div class="loading mr-2"></div>Salvando no Firebase...';
-
+            
             try {
-                // Verificar se sistema local está disponível
-                if (!sistemaLocalReady) {
-                    throw new Error('Sistema não inicializado');
-                }
-
-                console.log('💾 Iniciando salvamento...', novaImplantacao);
+                // MODIFICADO: Chamando a função do Firebase (exposta globalmente) [cite: 608]
+                await window.salvarNovaImplantacao(novaImplantacao);
                 
-                // Salvar no sistema local
-                implantacoes.push(novaImplantacao);
-                salvarDadosLocais();
-                renderizarImplantacoes();
-                atualizarEstatisticas();
-                
-                console.log('✅ Nova implantação salva com sucesso!');
-                mostrarNotificacao('💾 Nova implantação salva com sucesso!', 'success');
+                console.log('🔥 Nova implantação salva no Firebase!');
+                mostrarNotificacao('🔥 Nova implantação salva no Firebase!', 'success');
                 fecharModal();
+                // Não precisamos mais chamar salvarDadosLocais() ou renderizar()
+                // O onSnapshot [cite: 584] cuidará da atualização da tela.
+
             } catch (error) {
-                console.error('❌ Erro detalhado ao salvar:', {
+                console.error('❌ Erro detalhado ao salvar no Firebase:', {
                     erro: error,
                     message: error.message,
                     stack: error.stack,
                     dados: novaImplantacao
                 });
-                
                 const mensagemErro = error.message || 'Erro desconhecido ao salvar';
-                mostrarNotificacao(`❌ Erro ao salvar: ${mensagemErro}`, 'error');
+                mostrarNotificacao(`❌ Erro ao salvar no Firebase: ${mensagemErro}`, 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -1881,19 +1766,21 @@
             document.body.appendChild(modal);
         }
 
-        function editarImplantacao(index) {
+function editarImplantacao(implantacaoId) { // Recebe ID, não index
             if (!permissoes.podeEditar) {
                 mostrarNotificacao('Você não tem permissão para editar implantações', 'error');
                 return;
             }
 
-            const implantacao = implantacoes[index];
+            // MODIFICADO: Encontrar pelo ID do Firebase, não pelo index
+            const implantacao = implantacoes.find(i => i.id === implantacaoId);
+            
             if (!implantacao) {
                 mostrarNotificacao('Implantação não encontrada', 'error');
                 return;
             }
 
-            // Compatibilidade com dados existentes
+            // O resto da função continua igual, mas o onsubmit é ajustado
             const chamado = implantacao.chamado || implantacao.numero_chamado || '';
             const fornecedor = implantacao.fornecedor || implantacao.nome_fornecedor || '';
             const tipoAgv = implantacao.tipoAgv || implantacao.tipo_agv || implantacao.tipo || '';
@@ -1909,7 +1796,7 @@
                 <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-y-auto">
                     <div class="bg-gradient-to-r from-yellow-600 to-orange-600 p-6 rounded-t-xl">
                         <div class="flex justify-between items-center">
-                            <h2 class="text-2xl font-bold text-white">✏️ Editar Local - ${chamado}</h2>
+                            <h2 class="text-2xl font-bold text-white">✏️ Editar - ${chamado}</h2>
                             <button onclick="fecharModal()" class="text-white hover:text-gray-200 transition-colors">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -1918,11 +1805,10 @@
                         </div>
                     </div>
                     
-                    <form class="p-6 space-y-6" onsubmit="salvarEdicao(event, ${index})">
+                    <form class="p-6 space-y-6" onsubmit="salvarEdicao(event, '${implantacaoId}')">
                         <div class="bg-blue-50 p-4 rounded-lg mb-4">
-                            <p class="text-sm text-blue-800">💡 <strong>Compatibilidade:</strong> Este formulário funciona com dados existentes e novos campos serão adicionados apenas nos próximos registros.</p>
+                            <p class="text-sm text-blue-800">💡 Editando registro do Firebase (Firestore).</p>
                         </div>
-
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
@@ -1946,7 +1832,6 @@
                                 </select>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo AGV</label>
@@ -1965,7 +1850,6 @@
                                 <input type="text" name="carteira" value="${carteira}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
                             </div>
                         </div>
-
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Data Solicitação</label>
@@ -1980,30 +1864,26 @@
                                 <input type="number" name="licencas" value="${licencas}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
                             </div>
                         </div>
-
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Observações</label>
                             <textarea name="observacoes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none">${observacoes}</textarea>
                         </div>
-                        
                         <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
                             <button type="button" onclick="fecharModal()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
                                 Cancelar
                             </button>
                             <button type="submit" class="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors">
-                                💾 Atualizar Local
+                                🔥 Atualizar Firebase
                             </button>
                         </div>
                     </form>
                 </div>
             `;
-            
             document.body.appendChild(modal);
         }
 
-        async function salvarEdicao(event, firebaseKey) {
+async function salvarEdicao(event, implantacaoId) { // Recebe ID
             event.preventDefault();
-            
             if (!permissoes.podeEditar) {
                 mostrarNotificacao('Você não tem permissão para editar implantações', 'error');
                 return;
@@ -2012,8 +1892,8 @@
             const form = event.target;
             const formData = new FormData(form);
             
-            // Encontrar a implantação atual
-            const implantacaoAtual = implantacoes.find(impl => impl.firebaseKey === firebaseKey);
+            // Encontrar a implantação atual para mesclar (não perder dados)
+            const implantacaoAtual = implantacoes.find(i => i.id === implantacaoId);
             if (!implantacaoAtual) {
                 mostrarNotificacao('Implantação não encontrada', 'error');
                 return;
@@ -2021,7 +1901,7 @@
 
             // Criar objeto atualizado
             const implantacaoAtualizada = {
-                ...implantacaoAtual,
+                ...implantacaoAtual, // Mantém campos existentes
                 status: formData.get('status'),
                 fornecedor: formData.get('fornecedor'),
                 tipoAgv: formData.get('tipoAgv'),
@@ -2030,9 +1910,9 @@
                 dataEntrega: formData.get('dataEntrega'),
                 licencas: parseInt(formData.get('licencas')) || 0,
                 observacoes: formData.get('observacoes'),
-                atualizadoEm: new Date().toISOString()
+                // atualizadoEm será definido pela função do Firebase [cite: 598]
             };
-
+            
             // Recalcular dias de produção se necessário
             if (implantacaoAtualizada.dataSolicitacao && implantacaoAtualizada.dataEntrega) {
                 const inicio = new Date(implantacaoAtualizada.dataSolicitacao);
@@ -2041,21 +1921,22 @@
                 implantacaoAtualizada.diasProducao = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             }
 
-            // Remover firebaseKey do objeto antes de salvar
-            delete implantacaoAtualizada.firebaseKey;
+            // Remover o ID do objeto, pois ele não deve ser salvo DENTRO do documento
+            delete implantacaoAtualizada.id; 
 
-            // Mostrar loading
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<div class="loading mr-2"></div>Atualizando Firebase...';
-
+            
             try {
-                const implantacaoRef = window.firebase.ref(window.firebase.database, `implantacoes/${firebaseKey}`);
-                await window.firebase.update(implantacaoRef, implantacaoAtualizada);
+                // MODIFICADO: Chamando a função do Firestore (exposta globalmente) [cite: 609]
+                await window.atualizarImplantacao(implantacaoId, implantacaoAtualizada);
                 
                 mostrarNotificacao('🔥 Implantação atualizada no Firebase com sucesso!', 'success');
                 fecharModal();
+                // O onSnapshot [cite: 584] cuidará da atualização da tela
+
             } catch (error) {
                 console.error('Erro ao atualizar no Firebase:', error);
                 mostrarNotificacao('Erro ao atualizar no Firebase: ' + error.message, 'error');
@@ -2065,13 +1946,15 @@
             }
         }
 
-        async function confirmarExclusao(firebaseKey) {
+async function confirmarExclusao(implantacaoId) { // Recebe ID, não index/firebaseKey
             if (!permissoes.podeExcluir) {
                 mostrarNotificacao('Você não tem permissão para excluir implantações', 'error');
                 return;
             }
 
-            const implantacao = implantacoes.find(impl => impl.firebaseKey === firebaseKey);
+            // MODIFICADO: Encontrar pelo ID do Firebase
+            const implantacao = implantacoes.find(impl => impl.id === implantacaoId);
+            
             if (!implantacao) {
                 mostrarNotificacao('Implantação não encontrada', 'error');
                 return;
@@ -2088,32 +1971,28 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                                 </svg>
                             </div>
-                            <h2 class="text-2xl font-bold text-white">⚠️ Confirmar Exclusão Firebase</h2>
+                            <h2 class="text-2xl font-bold text-white">⚠️ Confirmar Exclusão</h2>
                         </div>
                     </div>
-                    
                     <div class="p-6">
                         <p class="text-gray-700 mb-4">Tem certeza que deseja excluir do Firebase:</p>
                         <div class="bg-gray-50 p-4 rounded-lg mb-6">
                             <p class="font-semibold">${implantacao.campanha || 'Campanha não informada'}</p>
                             <p class="text-sm text-gray-600">Chamado: ${implantacao.chamado}</p>
-                            <p class="text-sm text-gray-600">Fornecedor: ${implantacao.fornecedor}</p>
-                            <p class="text-sm text-gray-600">🔥 Firebase Key: ${firebaseKey}</p>
+                            <p class="text-sm text-gray-600">ID: ${implantacaoId}</p>
                         </div>
                         <p class="text-red-600 text-sm mb-6">⚠️ Esta ação removerá permanentemente do Firebase!</p>
-                        
                         <div class="flex space-x-4">
                             <button onclick="fecharModal()" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
                                 Cancelar
                             </button>
-                            <button onclick="excluirImplantacao('${firebaseKey}')" class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+                            <button onclick="window.excluirImplantacao('${implantacaoId}')" class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
                                 🔥 Excluir do Firebase
                             </button>
                         </div>
                     </div>
                 </div>
             `;
-            
             document.body.appendChild(modal);
         }
 
