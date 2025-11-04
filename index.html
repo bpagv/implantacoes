@@ -322,11 +322,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('💾 Inicializando sistema...');
         inicializarSistemaLocal();
     }
-
-    // 🔹 Iniciar sincronização automática com Firestore
-    if (typeof iniciarSincronizacaoFirestore === "function") {
-        iniciarSincronizacaoFirestore();
-    }
 });
 
             // Configurar máscara de CPF
@@ -401,33 +396,38 @@ function salvarDadosLocais() {
             }
         }
 
-        async function fazerLogin(cpf) {
-            // Definir permissões baseadas no nível
-            if (usuarioAtual.nivel === 'admin') {
-                permissoes = {
-                    podeVer: true,
-                    podeEditar: true,
-                    podeExcluir: true,
-                    podeIncluir: true
-                };
-            } else {
-                permissoes = {
-                    podeVer: true,
-                    podeEditar: false,
-                    podeExcluir: false,
-                    podeIncluir: false
-                };
-            }
+async function fazerLogin(cpf) {
+    // Definir permissões baseadas no nível
+    if (usuarioAtual.nivel === 'admin') {
+        permissoes = {
+            podeVer: true,
+            podeEditar: true,
+            podeExcluir: true,
+            podeIncluir: true
+        };
+    } else {
+        permissoes = {
+            podeVer: true,
+            podeEditar: false,
+            podeExcluir: false,
+            podeIncluir: false
+        };
+    }
 
-            // Atualizar interface baseada nas permissões
-            atualizarInterfacePorPermissoes();
-            
-            // Adicionar efeito de fade-in aos elementos
-            const elements = document.querySelectorAll('.fade-in');
-            elements.forEach((element, index) => {
-                element.style.animationDelay = `${index * 0.1}s`;
-            });
-        }
+    // Atualizar interface baseada nas permissões
+    atualizarInterfacePorPermissoes();
+    
+    // Adicionar efeito de fade-in aos elementos
+    const elements = document.querySelectorAll('.fade-in');
+    elements.forEach((element, index) => {
+        element.style.animationDelay = `${index * 0.1}s`;
+    });
+
+    // 🔹 Iniciar sincronização Firestore assim que o login for concluído
+    if (typeof iniciarSincronizacaoFirestore === "function") {
+        iniciarSincronizacaoFirestore();
+    }
+}
 
         function atualizarInterfacePorPermissoes() {
             // Botões do header
