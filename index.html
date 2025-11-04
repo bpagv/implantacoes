@@ -298,42 +298,35 @@
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async function() {
+    // Verificar se já está logado
     const cpfSalvo = localStorage.getItem('cpfUsuario');
-    console.log('CPF salvo no localStorage:', cpfSalvo); 
-    
     if (cpfSalvo) {
-        // Lógica de definição de usuário (admin/viewer)
+        // Verificar se é administrador
         if (cpfsAdministradores.includes(cpfSalvo)) {
             usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
         } else if (cpfSalvo.length === 11 && /^\d+$/.test(cpfSalvo)) {
             usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
         }
-
-        // 🟢 PONTO DE SUCESSO DO LOGIN/RECUPERAÇÃO
+        
         if (usuarioAtual) {
             await fazerLogin(cpfSalvo);
-            
-            // 1. Mostrar o painel após o login ser concluído
-            mostrarPainel(); 
-            
-            // 2. Iniciar a sincronização do Firebase AGORA
-            if (typeof window.iniciarSincronizacaoFirestore === 'function') {
-                window.iniciarSincronizacaoFirestore(); 
-                console.log("🔥 Sincronização do Firestore iniciada após login.");
-            } else {
-                 console.error("❌ A função iniciarSincronizacaoFirestore não está disponível.");
-            }
         } else {
-            // Se o CPF estava no localStorage, mas a validação falhou (deveria ser raro)
             mostrarModalLogin();
         }
-        
     } else {
-        // Se não houver CPF salvo
         mostrarModalLogin();
     }
-    
-    // (O seu código final de inicialização do sistema local não deve mais ser necessário)
+
+    // Inicializar sistema local
+    if (!sistemaInicializado) {
+        console.log('💾 Inicializando sistema...');
+        inicializarSistemaLocal();
+    }
+
+    // 🔹 Iniciar sincronização automática com Firestore
+    if (typeof iniciarSincronizacaoFirestore === "function") {
+        iniciarSincronizacaoFirestore();
+    }
 });
 
             // Configurar máscara de CPF
@@ -1272,11 +1265,6 @@ async function processarImportacao() {
                         : `🔥 Importação 100% concluída! ${sucessos} registros salvos!`;
                     mostrarNotificacao(msg, erros > 0 ? 'warning' : 'success');
                     
-                    // 🚨 ADICIONE ESTAS DUAS LINHAS 🚨
-                    try { window.renderizarImplantacoes(); } catch(e) { console.error("Erro ao renderizar:", e); }
-                    try { window.atualizarEstatisticas(); } catch(e) { console.error("Erro ao atualizar estatísticas:", e); }
-                    // FIM DA ADIÇÃO
-                    
                     setTimeout(() => fecharModalImportacao(), 2000);
                 } else {
                     mostrarNotificacao(`❌ Nenhum registro foi importado. Total de erros: ${erros}.`, 'error');
@@ -2069,19 +2057,6 @@ async function confirmarExclusao(implantacaoId) { // Recebe ID, não index/fireb
                 }
             }, 5000);
         }
-// ⚠️ NO SEU SCRIPT PRINCIPAL (o que NÃO tem type="module"):
-
-window.renderizarImplantacoesPaginadas = function() {
-    // ... código para renderizar a tabela ...
-    console.log('Página renderizada com sucesso!');
-};
-
-window.atualizarEstatisticas = function() {
-    // ... código para atualizar os números do dashboard ...
-    console.log('Estatísticas atualizadas.');
-};
-
-// Agora, essas funções estão anexadas ao objeto "window" e qualquer outro script as verá.   
     </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99202e32042c9a86',t:'MTc2MTA0MzY4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 <!-- FIREBASE FIRESTORE (integração adicionada) -->
@@ -2124,22 +2099,12 @@ window.atualizarEstatisticas = function() {
               data.id = d.id;
               lista.push(data);
           });
-// ⬇️ CORREÇÃO: Garanta que a função PAGINADA é chamada (ou o alias global)
-    if (typeof window.renderizarImplantacoes === "function") {
-        window.renderizarImplantacoes();
-    } else {
-        // Se o alias não existir, tente a função paginada diretamente
-        if (typeof window.renderizarImplantacoesPaginadas === "function") {
-             window.renderizarImplantacoesPaginadas();
-        }
-    }
-    
-    if (typeof window.atualizarEstatisticas === "function") {
-         window.atualizarEstatisticas();
-    }
-    
-    // ⬆️ FIM DA CORREÇÃO
-}, (err)=>{
+          // substituir o array global mantendo referência
+          window.implantacoes = lista.sort((a,b)=> (b.criadoEm||'').localeCompare(a.criadoEm||''));
+          console.log(`✅ ${lista.length} implantações sincronizadas do Firestore`);
+          if (typeof renderizarImplantacoes === "function") renderizarImplantacoes();
+          if (typeof atualizarEstatisticas === "function") atualizarEstatisticas();
+      }, (err)=>{
           console.error("❌ Erro onSnapshot:", err);
       });
   }
@@ -2196,6 +2161,17 @@ window.atualizarEstatisticas = function() {
       }
   }
 
+  async function excluirImplantacaoFirestore(id) {
+      try {
+          const docRef = doc(db, "implantacoesnew", id);
+          await deleteDoc(docRef);
+          console.log("🗑️ Implantação excluída do Firestore:", id);
+      } catch (err) {
+          console.error("❌ Erro ao excluir implantação:", err);
+          throw err;
+      }
+  }
+
   // === OVERRIDES GLOBAIS (mantêm layout/nomes originais, trocando apenas a persistência) ===
   // Substitui salvarDadosLocais para sincronizar com Firestore
   window.salvarDadosLocais = async function() {
@@ -2234,6 +2210,21 @@ window.atualizarEstatisticas = function() {
   window.atualizarImplantacao = async function(id, dados) {
       return await atualizarImplantacaoFirestore(id, dados);
   };
+
+  // Se o código de importação chamar diretamente salvarDadosLocais após inserir na array,
+  // nossa sobrescrita salvarDadosLocais() que invoca salvarOuAtualizarTodos() cuidará da sincronização.
+  // Para maior compatibilidade, também interceptamos clicks no botão de importação para garantir
+  // que, após processar importação local, sincronize com Firestore.
+  document.addEventListener('click', function(e){
+      const el = e.target;
+      if (el && (el.id === 'btnImportarExcel' || el.closest && el.closest('#btnImportarExcel'))) {
+          // Esperar 200ms para que o processo original (que adiciona items a window.implantacoes) ocorra,
+          // então sincronizar para o Firestore.
+          setTimeout(()=>{
+              if (window.salvarDadosLocais) window.salvarDadosLocais();
+          }, 500);
+      }
+  });
 
   // Iniciar automaticamente se o script carregar depois do DOM
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
