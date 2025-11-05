@@ -404,8 +404,8 @@ async function fazerLogin(cpf) {
             podeEditar: true,
             podeExcluir: true,
             podeIncluir: true
-        }; // <--- Este fecha o objeto 'permissoes'
-    } // <--- ESTE '}' ESTÁ FALTANDO NO SEU CÓDIGO. Ele fecha o 'if'.
+        };
+    }
     else {
         permissoes = {
             podeVer: true,
@@ -415,7 +415,7 @@ async function fazerLogin(cpf) {
         };
     }
 
-    // Atualizar interface baseada nas permissões
+// Atualizar interface baseada nas permissões
     atualizarInterfacePorPermissoes();
     
     // Adicionar efeito de fade-in aos elementos
@@ -423,7 +423,7 @@ async function fazerLogin(cpf) {
     elements.forEach((element, index) => {
         element.style.animationDelay = `${index * 0.1}s`;
     });
-
+    
     // 🔹 Iniciar sincronização Firestore assim que o login for concluído
     if (typeof iniciarSincronizacaoFirestore === "function") {
         iniciarSincronizacaoFirestore();
