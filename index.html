@@ -405,8 +405,7 @@ async function fazerLogin(cpf) {
             podeExcluir: true,
             podeIncluir: true
         };
-    }
-    else {
+    } else { // <--- A chave de fechamento do 'if' está limpa e o 'else' está na sequência
         permissoes = {
             podeVer: true,
             podeEditar: false,
@@ -415,7 +414,7 @@ async function fazerLogin(cpf) {
         };
     }
 
-// Atualizar interface baseada nas permissões
+    // Atualizar interface baseada nas permissões
     atualizarInterfacePorPermissoes();
     
     // Adicionar efeito de fade-in aos elementos
@@ -423,7 +422,7 @@ async function fazerLogin(cpf) {
     elements.forEach((element, index) => {
         element.style.animationDelay = `${index * 0.1}s`;
     });
-    
+
     // 🔹 Iniciar sincronização Firestore assim que o login for concluído
     if (typeof iniciarSincronizacaoFirestore === "function") {
         iniciarSincronizacaoFirestore();
