@@ -404,8 +404,9 @@ async function fazerLogin(cpf) {
             podeEditar: true,
             podeExcluir: true,
             podeIncluir: true
-        };
-    } else {
+        }; // <--- Este fecha o objeto 'permissoes'
+    } // <--- ESTE '}' ESTÁ FALTANDO NO SEU CÓDIGO. Ele fecha o 'if'.
+    else {
         permissoes = {
             podeVer: true,
             podeEditar: false,
