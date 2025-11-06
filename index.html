@@ -4,7 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Controle de Implantações - Sistema AGV</title>
-  <script src="https://cdn.tailwindcss.com"></script><!-- SheetJS para leitura de Excel -->
+  <script
+
+// 🔐 Restaurar login salvo ao recarregar a página
+const cpfSalvo = localStorage.getItem('cpfUsuario');
+if (cpfSalvo) {
+    if (window.cpfsAdministradores && cpfsAdministradores.includes(cpfSalvo)) {
+        window.usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
+    } else {
+        window.usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
+    }
+    console.log("🔐 Login restaurado:", window.usuarioAtual);
+}
+ src="https://cdn.tailwindcss.com"></script><!-- SheetJS para leitura de Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><!-- Sistema Local Inicializado -->
   <script>
         console.log('💾 Sistema Cloud AGV inicializado');
@@ -344,7 +356,18 @@ document.addEventListener('DOMContentLoaded', async function() {
                     tentarLogin(cpf);
                 });
             }
-        });
+;
+
+   // Restaura o login salvo antes de qualquer coisa
+const cpfSalvo = localStorage.getItem('cpfUsuario');
+if (cpfSalvo) {
+  if (window.cpfsAdministradores && cpfsAdministradores.includes(cpfSalvo)) {
+    window.usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
+  } else {
+    window.usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
+  }
+  console.log("🔐 Login restaurado:", window.usuarioAtual);
+}
 
 function inicializarSistemaLocal() {
             // Esta função agora é controlada pelo script do Firebase [cite: 604]
@@ -2085,28 +2108,45 @@ async function confirmarExclusao(implantacaoId) { // Recebe ID, não index/fireb
   const db = getFirestore(app);
   const implantacoesRef = collection(db, "implantacoesnew");
 
+// 🔐 Restaurar login salvo ao recarregar a página
+const cpfSalvo = localStorage.getItem('cpfUsuario');
+if (cpfSalvo) {
+    if (window.cpfsAdministradores && cpfsAdministradores.includes(cpfSalvo)) {
+        window.usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
+    } else {
+        window.usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
+    }
+    console.log("🔐 Login restaurado:", window.usuarioAtual);
+}
+
   // Expor utilitários globalmente
   window._firestore = { db, implantacoesRef };
 
   // Carregamento em tempo real
-  function iniciarSincronizacaoFirestore() {
-      console.log("🌐 Conectando ao Firestore (coleção: implantacoesnew)...");
-      onSnapshot(implantacoesRef, (snapshot) => {
-          const lista = [];
-          snapshot.forEach(d => {
-              const data = d.data();
-              data.id = d.id;
-              lista.push(data);
-          });
-          // substituir o array global mantendo referência
-          window.implantacoes = lista.sort((a,b)=> (b.criadoEm||'').localeCompare(a.criadoEm||''));
-          console.log(`✅ ${lista.length} implantações sincronizadas do Firestore`);
-          if (typeof renderizarImplantacoes === "function") renderizarImplantacoes();
-          if (typeof atualizarEstatisticas === "function") atualizarEstatisticas();
-      }, (err)=>{
-          console.error("❌ Erro onSnapshot:", err);
-      });
-  }
+onSnapshot(implantacoesRef, (snapshot) => {
+    const lista = [];
+    snapshot.forEach(d => {
+        const data = d.data();
+        data.id = d.id;
+        lista.push(data);
+    });
+
+    window.implantacoes = lista.sort((a,b)=> (b.criadoEm||'').localeCompare(a.criadoEm||''));
+    console.log(`✅ ${lista.length} implantações sincronizadas do Firestore`);
+
+    // 🔹 Garante que a renderização só acontece após o DOM estar carregado
+    if (document.readyState === "complete") {
+        if (typeof renderizarImplantacoes === "function") renderizarImplantacoes();
+        if (typeof atualizarEstatisticas === "function") atualizarEstatisticas();
+    } else {
+        window.addEventListener("load", () => {
+            if (typeof renderizarImplantacoes === "function") renderizarImplantacoes();
+            if (typeof atualizarEstatisticas === "function") atualizarEstatisticas();
+        });
+    }
+}, (err)=>{
+    console.error("❌ Erro onSnapshot:", err);
+});
 
   async function salvarOuAtualizarTodos() {
       if (!window.implantacoes || !Array.isArray(window.implantacoes)) return;
@@ -2331,29 +2371,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// --- Paginação dinâmica e renderização (suporta tanto cards quanto tabela) ---
-let paginaAtual = 1;
-const itensPorPagina = 10;
-
-function obterTotalImplantacoes() {
-    if (Array.isArray(window.implantacoes)) return window.implantacoes.length;
-    if (Array.isArray(implantacoes)) return implantacoes.length;
-    return 0;
-}
-function obterImplantacoesArray() {
-    if (Array.isArray(window.implantacoes)) return window.implantacoes;
-    if (Array.isArray(implantacoes)) return implantacoes;
-    return [];
-}
-
-function renderizarImplantacoesPaginadas() {
-    const arr = obterImplantacoesArray();
-    const total = arr.length;
-    const inicio = (paginaAtual - 1) * itensPorPagina;
-    const fim = inicio + itensPorPagina;
-    const subset = arr.slice(inicio, fim);
-
-    // Preferência: se existir container de cards 'listaImplantacoes' usamos criarCardImplantacao
+// Preferência: se existir container de cards 'listaImplantacoes' usamos criarCardImplantacao
     const containerCards = document.getElementById('listaImplantacoes');
     const tabela = document.getElementById('tabela-implantacoes');
 
@@ -2372,7 +2390,7 @@ function renderizarImplantacoesPaginadas() {
             `;
             tabela.appendChild(row);
         });
-    } else if (containerCards) {
+    } else if (containerCards) 
         // modo cards (usando criarCardImplantacao se existir)
         containerCards.innerHTML = '';
         subset.forEach((item, idx) => {
@@ -2519,5 +2537,39 @@ window.addEventListener('load', function() {
     }
 });
 </script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+      apiKey: "AIzaSyAIKzCbt60ni9BKrNUM_uyDOZvYdtN-K9k",
+      authDomain: "controle-agv.firebaseapp.com",
+      projectId: "controle-agv",
+      storageBucket: "controle-agv.firebasestorage.app",
+      messagingSenderId: "220840335975",
+      appId: "1:220840335975:web:242eb4dd3f39b3b0d752c2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.iniciarSincronizacaoFirestore = function() {
+    console.log("🔄 Iniciando sincronização com Firestore...");
+
+    const ref = collection(db, "implantacoesnew");
+    onSnapshot(ref, (snapshot) => {
+      implantacoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log(`${implantacoes.length} implantações sincronizadas do Firestore`);
+      renderizarImplantacoes();
+      atualizarEstatisticas();
+    });
+  };
+
+  window.salvarNovaImplantacao = async function(dados) {
+    await addDoc(collection(db, "implantacoesnew"), dados);
+  };
+</script>
+
 </body>
 </html>
