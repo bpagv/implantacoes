@@ -296,33 +296,32 @@
             window.location.href = '../index.html';
         }
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', async function() {
-    // Verificar se já está logado
-    const cpfSalvo = localStorage.getItem('cpfUsuario');
-    if (cpfSalvo) {
-        // Verificar se é administrador
-        if (cpfsAdministradores.includes(cpfSalvo)) {
-            usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
-        } else if (cpfSalvo.length === 11 && /^\d+$/.test(cpfSalvo)) {
-            usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
-        }
-        
-        if (usuarioAtual) {
-            await fazerLogin(cpfSalvo);
-        } else {
-            mostrarModalLogin();
-        }
-    } else {
-        mostrarModalLogin();
-    }
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Verificar se já está logado
+            const cpfSalvo = localStorage.getItem('cpfUsuario');
+            if (cpfSalvo) {
+                // Verificar se é administrador
+                if (cpfsAdministradores.includes(cpfSalvo)) {
+                    usuarioAtual = { nome: 'Administrador', nivel: 'admin', cpf: cpfSalvo };
+                } else if (cpfSalvo.length === 11 && /^\d+$/.test(cpfSalvo)) {
+                    usuarioAtual = { nome: 'Usuário', nivel: 'viewer', cpf: cpfSalvo };
+                }
+                
+                if (usuarioAtual) {
+                    await fazerLogin(cpfSalvo);
+                } else {
+                    mostrarModalLogin();
+                }
+            } else {
+                mostrarModalLogin();
+            }
 
-    // Inicializar sistema local
-    if (!sistemaInicializado) {
-        console.log('💾 Inicializando sistema...');
-        inicializarSistemaLocal();
-    }
-});
+            // Inicializar sistema local
+            if (!sistemaInicializado) {
+                console.log('💾 Inicializando sistema...');
+                inicializarSistemaLocal();
+            }
 
             // Configurar máscara de CPF
             const cpfInput = document.getElementById('cpfInput');
@@ -396,38 +395,33 @@ function salvarDadosLocais() {
             }
         }
 
-async function fazerLogin(cpf) {
-    // Definir permissões baseadas no nível
-    if (usuarioAtual.nivel === 'admin') {
-        permissoes = {
-            podeVer: true,
-            podeEditar: true,
-            podeExcluir: true,
-            podeIncluir: true
-        };
-    } else { // <--- A chave de fechamento do 'if' está limpa e o 'else' está na sequência
-        permissoes = {
-            podeVer: true,
-            podeEditar: false,
-            podeExcluir: false,
-            podeIncluir: false
-        };
-    }
+        async function fazerLogin(cpf) {
+            // Definir permissões baseadas no nível
+            if (usuarioAtual.nivel === 'admin') {
+                permissoes = {
+                    podeVer: true,
+                    podeEditar: true,
+                    podeExcluir: true,
+                    podeIncluir: true
+                };
+            } else {
+                permissoes = {
+                    podeVer: true,
+                    podeEditar: false,
+                    podeExcluir: false,
+                    podeIncluir: false
+                };
+            }
 
-    // Atualizar interface baseada nas permissões
-    atualizarInterfacePorPermissoes();
-    
-    // Adicionar efeito de fade-in aos elementos
-    const elements = document.querySelectorAll('.fade-in');
-    elements.forEach((element, index) => {
-        element.style.animationDelay = `${index * 0.1}s`;
-    });
-
-    // 🔹 Iniciar sincronização Firestore assim que o login for concluído
-    if (typeof iniciarSincronizacaoFirestore === "function") {
-        iniciarSincronizacaoFirestore();
-    }
-}
+            // Atualizar interface baseada nas permissões
+            atualizarInterfacePorPermissoes();
+            
+            // Adicionar efeito de fade-in aos elementos
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.1}s`;
+            });
+        }
 
         function atualizarInterfacePorPermissoes() {
             // Botões do header
