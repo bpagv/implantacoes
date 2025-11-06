@@ -611,7 +611,10 @@ async function fazerLogin(cpf) {
                     
                     <div class="flex justify-between items-center pt-4 border-t border-white/20">
                         <div class="text-white/60 text-sm">
-                            <span>💾 Salvo: ${formatarData(impl.atualizadoEm || impl.atualizado_em || impl.criadoEm || impl.criado_em || new Date().toISOString())}</span>
+                            <span>
+  💾 Salvo: ${formatarData(impl.atualizadoEm || impl.atualizado_em || impl.criadoEm || impl.criado_em || new Date().toISOString())}
+  ${impl.atualizadoPorCpf ? ` por ${impl.atualizadoPorCpf}` : impl.criadoPorCpf ? ` por ${impl.criadoPorCpf}` : ''}
+</span>
                         </div>
                         <div class="flex space-x-3">
                             <button onclick="verDetalhes(${index})" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors">
@@ -1245,6 +1248,7 @@ async function processarImportacao() {
                             licencas: parseInt(item['Licenças'] || 0) || 0,
                             diasProducao: parseInt(item['Dias Produção'] || 0) || 0,
                             criadoPor: `${usuarioAtual.nome} (Importação Excel)`,
+                            criadoPorCpf: usuarioAtual?.cpf || null,
                             importadoEm: new Date().toISOString(),
                             origemImportacao: 'excel'
                             // Os campos criadoEm e atualizadoEm serão adicionados pela função do Firebase [cite: 595, 596]
